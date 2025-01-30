@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from data.FewShotDataset import FewShotEpisoder
 from model.ProtoNet import ProtoNet
 
-def main(path, save_to, epochs=10):
+def main(path, save_to, epochs=10, iters=5):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # init device
   # create FSL episode generator
   transform = tv.transforms.Compose([
@@ -20,10 +20,11 @@ def main(path, save_to, epochs=10):
   optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
   criterion = nn.CrossEntropyLoss()
   # define learning step:
-  global loss
-  for epoch in range(epochs):
-    for support_set, query_set in episoder:
-      support_loader, query_loader = DataLoader(support_set), DataLoader(query_set)
+  global lossn
+  for _ in range(epochs): # epoch: the length of episodes
+    support_set, query_set = episoder.create_episode(range(1, 3), 4, 6)
+    support_loader, query_loader = DataLoader(support_set), DataLoader(query_set)
+    for _ in range(iters): #iters: the length of update step in an episode
       # train algorithm
       for x, y in support_loader:
         loss = criterion(model(x), y)
@@ -33,9 +34,8 @@ def main(path, save_to, epochs=10):
       # for
       # evaluation algorithm
       for x, y in query_loader: loss = criterion(model(x), y)
-      print(loss)
-      # for
-  # for
+      print(f"loss: {loss:.4f}")
+    # for
   # saving the model's parameters and the other data
   features = {
     "state": model.state_dict(),
