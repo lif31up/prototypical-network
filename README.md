@@ -1,2 +1,2 @@
 # prototypical-network
- FSL image classification with ProtoNet
+FSL image classification with ProtoNet
