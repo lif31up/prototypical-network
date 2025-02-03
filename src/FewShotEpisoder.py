@@ -16,13 +16,13 @@ def euclidean_distance(a: torch.tensor, b: torch.tensor):
 # euclidean_distance()
 
 class FSLDataset(Dataset):
-  def __init__(self, dataset, mode="support"):
+  def __init__(self, dataset, transform, mode="support"):
     self.dataset = [] if not dataset else dataset
-    self.mode = mode
+    self.mode, self.transform = mode, transform
 
   def __getitem__(self, idx):
     feature, label = self.dataset[idx]
-    return feature, label
+    return self.transform(feature), label
   # __getitem__():
 
   def __len__(self): return len(self.dataset)
@@ -60,10 +60,11 @@ class Episoder:
         query_set.append(self.dataset[index])
         self.ways[way].pop(cnt)
     # for for
-    return FSLDataset(support_set, mode="support"), FSLDataset(query_set, mode="query")
+    return FSLDataset(support_set, mode="support", transform=self.transform), FSLDataset(query_set, mode="query", transform=self.transform)
   # get_episode()
 # Episoder()
 
+# flow simulation
 def main(path: str):
   transform = tv.transforms.Compose([
     tv.transforms.Resize((224, 224)),
@@ -72,7 +73,15 @@ def main(path: str):
   ]) # transform
   imageset = tv.datasets.ImageFolder(root=path)
   episoder = Episoder(imageset, 3, 4, 4, transform)
-  support_set, query_set = episoder.get_episode()
+
+  # train flow
+  epochs, iters = 2, 2
+  for _ in range(epochs):
+    support_set, query_set = episoder.get_episode()
+    for _ in range(iters):
+      for x, y in DataLoader(support_set, shuffle=True): print(x)
+      for x, y in DataLoader(query_set, shuffle=True): print(x)
+    # for
 # main():
 
 if __name__ == "__main__": main("../data/raw/omniglot-py/images_background/Korean")
