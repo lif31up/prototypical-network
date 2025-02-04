@@ -26,7 +26,7 @@ def argmax_encoder(result):
   return torch.tensor([1. if index == index_of_greatest else 0. for index, _ in enumerate(result)])
 # encoder():
 
-class FSLDataset(Dataset):
+class FewShotDataset(Dataset):
   def __init__(self, dataset, n_classes, transform, mode="support"):
     self.dataset = [] if not dataset else dataset
     self.mode, self.transform, self.n_classes = mode, transform, n_classes
@@ -56,7 +56,7 @@ class FSLDataset(Dataset):
     return prototypes
 # FSLDataset()
 
-class FSLEpisoder:
+class FewShotEpisoder:
   def __init__(self, dataset, n_way, k_shot, n_query, transform):
     self.n_way, self.k_shot, self.n_query = n_way, k_shot, n_query  # define n-way/k-hot framework parameters
     self.dataset, self.transform = dataset, transform  # init dataset and apply transformer
@@ -88,7 +88,7 @@ class FSLEpisoder:
         query_set.append(self.dataset[index])
         self.ways[way].pop(cnt)
     # for for
-    return FSLDataset(support_set, self.n_classes, mode="support", transform=self.transform), FSLDataset(query_set, self.n_classes, mode="query", transform=self.transform)
+    return FewShotDataset(support_set, self.n_classes, mode="support", transform=self.transform), FewShotDataset(query_set, self.n_classes, mode="query", transform=self.transform)
   # get_episode()
 # Episoder()
 
@@ -100,7 +100,7 @@ def main(path: str):
     tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ]) # transform
   imageset = tv.datasets.ImageFolder(root=path)
-  episoder = FSLEpisoder(imageset, 3, 4, 4, transform)
+  episoder = FewShotEpisoder(imageset, 3, 4, 4, transform)
 
   # train flow
   epochs, iters = 2, 2
