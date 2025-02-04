@@ -9,7 +9,6 @@ class ProtoNet(nn.Module):
     self.conv2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1)
     self.fc1 = nn.Linear(100352, 128)
     self.fc2 = nn.Linear(128, n_classes)
-    self.softmax = nn.Softmax(n_classes)
   # __init__():
 
   def forward(self, x):
@@ -23,6 +22,6 @@ class ProtoNet(nn.Module):
     x = self.fc1(x)
     x = self.relu(x)
     x = self.fc2(x)
-    return self.softmax(x)
+    return x
   # forward
 # ProtoNet
