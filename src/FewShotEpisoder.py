@@ -56,7 +56,7 @@ class FSLDataset(Dataset):
     return prototypes
 # FSLDataset()
 
-class Episoder:
+class FSLEpisoder:
   def __init__(self, dataset, n_way, k_shot, n_query, transform):
     self.n_way, self.k_shot, self.n_query = n_way, k_shot, n_query  # define n-way/k-hot framework parameters
     self.dataset, self.transform = dataset, transform  # init dataset and apply transformer
@@ -100,7 +100,7 @@ def main(path: str):
     tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ]) # transform
   imageset = tv.datasets.ImageFolder(root=path)
-  episoder = Episoder(imageset, 3, 4, 4, transform)
+  episoder = FSLEpisoder(imageset, 3, 4, 4, transform)
 
   # train flow
   epochs, iters = 2, 2

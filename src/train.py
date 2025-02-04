@@ -2,7 +2,7 @@ import torch.cuda
 import torchvision as tv
 from torch import nn
 from torch.utils.data import DataLoader
-from src.FewShotEpisoder import Episoder
+from src.FewShotEpisoder import FSLEpisoder
 from src.model.ProtoNet import ProtoNet
 
 def main(path, save_to, epochs=10, iters=5):
@@ -15,7 +15,7 @@ def main(path, save_to, epochs=10, iters=5):
     tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ]) # transform
   imageset = tv.datasets.ImageFolder(root=path)
-  episoder = Episoder(imageset, 4, 4, 4, transform)
+  episoder = FSLEpisoder(imageset, 4, 4, 4, transform)
 
   # init learning
   n_classes = episoder.n_classes
