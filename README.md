@@ -42,3 +42,45 @@ python run.py --dataset_path path/to/your/dataset --model_path path/to/saved/mod
 ```
 * `testset_path`: Path to your dataset.
 * `model_path`: Path to your model.
+
+---
+# Prototypical Networks: A Few-Shot Learning Approach
+
+## Introduction
+Prototypical Networks are a powerful approach for **few-shot learning**, where the goal is to classify unseen classes with very few labeled examples. The key idea behind Prototypical Networks is to learn an embedding space where each class is represented by a **prototype** (i.e., the mean of support examples in that class), and new queries are classified based on their distance to these prototypes.
+
+## How Prototypical Networks Work
+1. **Embedding Representation**: Each input image is passed through a convolutional encoder to obtain a feature embedding.
+2. **Prototype Computation**: The prototype for each class is computed as the mean of the embeddings of support samples belonging to that class.
+3. **Distance-Based Classification**: Query samples are classified based on the distance (usually Euclidean) to the nearest prototype.
+4. **Optimization**: The network is trained to minimize the distance between query samples and their correct prototypes while maximizing the distance to incorrect ones.
+
+## Implementation in This Repository
+This repository implements a **Prototypical Network** using **PyTorch**. The main components include:
+- **Encoder**: A CNN-based feature extractor that maps input images to an embedding space.
+- **Prototype Computation**: Averaging support set embeddings to form class prototypes.
+- **Distance Function**: Computing the similarity (using Euclidean distance) between query embeddings and class prototypes.
+- **Training & Evaluation**: A pipeline for episodic training with support and query sets.
+
+## Algorithm Breakdown
+1. **Support Set & Query Set Creation**
+   - Each episode consists of **N classes**, with **K support samples** and **Q query samples** per class.
+   - Support set helps define class prototypes.
+   - Query samples are classified using learned prototypes.
+
+2. **Computing Class Prototypes**
+   - For each class `c`, compute its prototype:
+     ```math
+     p_c = \frac{1}{K} \sum_{i=1}^{K} f(x_i)
+     ```
+     where `f(x_i)` is the embedding of the support example `x_i`.
+
+3. **Query Classification**
+   - For each query sample, compute distances to all class prototypes:
+     ```math
+     d(f(x_q), p_c) = ||f(x_q) - p_c||^2
+     ```
+   - Assign the query sample to the nearest prototype.
+---
+This implementation is inspired by **"Prototypical Networks for Few-Shot Learning" (Snell et al., 2017)**.
+
