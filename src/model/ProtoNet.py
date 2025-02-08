@@ -6,46 +6,30 @@ from src.FewShotEpisoder import FewShotEpisoder
 from tqdm import tqdm
 
 class ProtoNet(nn.Module):
-  def __init__(self, prototypes):
-    super(ProtoNet, self).__init__()
-    self.embedding_net = EmbeddingNet()
-    self.prototypes = prototypes
-  # __init__():
-
-  def encoder(self, x):
-    dists = torch.zeros(len(self.prototypes))
-    for index, q_point in enumerate(self.prototypes): dists[index] = torch.dist(q_point, x)
-    y = torch.zeros(len(self.prototypes))
-    y[torch.argmax(dists)] = 1.0
-    return y
-  # encoder()
-
-  def forward(self, x):
-    x = self.embedding_net(x)
-    x = self.encoder(x)
-    return x
-  # forward
-# ProtoNet
-
-class EmbeddingNet(nn.Module):
   def __init__(self):
-    super(EmbeddingNet, self).__init__()
-    self.encoder = nn.Sequential(
-      nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, stride=1, padding=1),  # (64, 224, 224)
-      nn.ReLU(),
-      nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1, padding=1),  # (128, 224, 224)
-      nn.ReLU(),
-    ) # encoder (down-scaling)
-    self.decoder = nn.Sequential(
-      nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, stride=1, padding=1),  # (64, 224, 224)
-      nn.ReLU(),
-      nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, stride=1, padding=1),  # (3, 224, 224)
-    ) # decoder (up-scaling)
+    super(ProtoNet, self).__init__()
+    self.conv1 = nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=1, padding=1)
+    self.conv2 = nn.Conv2d(in_channels=16, out_channels=3, kernel_size=3, stride=1, padding=1)
+    self.relu = nn.ReLU()
+    self.flatten = nn.Flatten()
+    self.softmax = nn.LogSoftmax(dim=0)
   # __init__():
 
+  def prototyping(self, prototypes): self.prototypes = prototypes
+
+  def cdist(self, x):
+    dists = torch.cdist(x, self.prototypes, p=2).squeeze(0)  # Efficient batch-wise L2 distance computation
+    return dists
+  # cdist()
+
   def forward(self, x):
-    x = self.encoder(x)
-    x = self.decoder(x)
+    x = self.conv1(x)
+    x = self.relu(x)
+    x = self.conv2(x)
+    x = self.relu(x)
+    x = self.flatten(x)
+    x = self.cdist(x)
+    x = self.softmax(x)
     return x
   # forward
 # ProtoNet
@@ -81,8 +65,9 @@ def main(path: str):
         sum /= len(embedded_features)
         prototypes.append(sum.requires_grad_(True))
       # update loss
-      for feature, label in DataLoader(query_set.prototyping(prototypes), shuffle=True):
-        print(model.forward(feature).size(), label.size())
+      model.prototyping(prototypes)
+      for feature, label in DataLoader(query_set, shuffle=True):
+        print(model.forward(feature), label)
   # for for
 # main():
 
