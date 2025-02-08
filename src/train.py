@@ -6,7 +6,7 @@ from src.FewShotEpisoder import FewShotEpisoder
 from src.model.ProtoNet import ProtoNet
 from tqdm import tqdm
 
-def main(path, save_to, epochs=1, iters=10):
+def main(path, save_to, k_shot, n_query, iters=10, epochs=1):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # init device
 
   # create FSL episode generator
