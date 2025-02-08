@@ -1,8 +1,5 @@
 import argparse
 
-import torchvision.datasets
-
-
 def train(path: str, save_to: str, iters: int, k_shot: int, n_query: int, epochs: int):
   import src.train as trainer
   trainer.main(path=path.strip(), save_to=save_to, k_shot=k_shot, n_query=n_query, iters=iters, epochs=epochs)
