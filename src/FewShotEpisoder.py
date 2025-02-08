@@ -28,7 +28,6 @@ class FewShotDataset(Dataset):
   # __getitem__():
 
   def __len__(self): return len(self.indices)
-
 # FSLDataset()
 
 class FewShotEpisoder:

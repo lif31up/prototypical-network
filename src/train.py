@@ -55,4 +55,4 @@ def main(path, save_to, k_shot=3, n_query=3, iters=10, epochs=1):
   torch.save(features, save_to)
 # main()
 
-if __name__ == "__main__": main(path="../data/raw/omniglot-py/images_background/Futurama", save_to="./model/model.pth")
+if __name__ == "__main__": main(path="./data/raw/omniglot-py/images_background/Futurama", save_to="./model/model.pth")
