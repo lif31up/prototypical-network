@@ -1,5 +1,8 @@
 import argparse
 
+import torchvision.datasets
+
+
 def train(path: str, save_to: str, iters: int, k_shot: int, n_query: int, epochs: int):
   import src.train as trainer
   trainer.main(path=path.strip(), save_to=save_to, k_shot=k_shot, n_query=n_query, iters=iters, epochs=epochs)
@@ -9,6 +12,11 @@ def eval(model: str, path: str):
   import src.eval as evaler
   evaler.main(model=model, path=path)
 # eval()
+
+def download(path: str):
+  import torchvision as tv
+  tv.datasets.Omniglot(root=path, background=True, download=True)
+# download()
 
 def main():
   # eval(default)
@@ -33,6 +41,11 @@ def main():
     iters=kwargs.iters,
     epochs=kwargs.epochs)
   ) # parser_train.set_defaults()
+
+  # download dataset
+  parser_download = subparser.add_parser("download", help="download dataset")
+  parser_download.add_argument("--path", type=str, help="path to download dataset")
+  parser_download.set_defaults(func=lambda kwargs: download(kwargs.path))
 
   args = parser.parse_args()
   if hasattr(args, 'func'): args.func(args)
