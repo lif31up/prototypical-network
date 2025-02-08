@@ -6,7 +6,7 @@ from src.FewShotEpisoder import FewShotEpisoder
 from src.model.ProtoNet import ProtoNet
 from tqdm import tqdm
 
-def main(path, save_to, epochs=10, iters=5):
+def main(path, save_to, epochs=1, iters=10):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # init device
 
   # create FSL episode generator
@@ -16,25 +16,33 @@ def main(path, save_to, epochs=10, iters=5):
     tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ]) # transform
   imageset = tv.datasets.ImageFolder(root=path)
-  episoder = FewShotEpisoder(imageset, 2, 1, transform)
+  episoder = FewShotEpisoder(imageset, 4, 2, transform)
 
   # init learning
   model = ProtoNet().to(device)
   optim = torch.optim.Adam(model.parameters(), lr=0.001)
   criterion = nn.CrossEntropyLoss()
 
-  for _ in tqdm(range(epochs)):
+  for _ in tqdm(range(epochs), desc="epochs/episodes"):
     support_set, query_set = episoder.get_episode()
-    model.q_points = support_set.prototypes
-    loss = 0.
-    for _ in range(iters):
-      for feature, label in DataLoader(query_set, shuffle=True):
-        loss = criterion(model.forward(feature), support_set.prototypes[label])
+    prototypes = list()
+    for _ in tqdm(range(iters), desc="\titerations/queries"):
+      # compute prototype from support examples
+      embedded_features_list = [[] for _ in range(len(support_set.classes))]
+      for embedded_feature, label in support_set: embedded_features_list[label].append(embedded_feature)
+      for embedded_features in embedded_features_list:
+        sum = torch.zeros_like(embedded_features[0])
+        for embedded_feature in embedded_features: sum += embedded_feature
+        sum /= len(embedded_features)
+        prototypes.append(sum.requires_grad_(True))
+      # update loss
+      loss = float()
+      for x, y in DataLoader(query_set.prototyping(prototypes), shuffle=True):
+        loss = criterion(model.forward(x), y)
         optim.zero_grad()
         loss.backward()
         optim.step()
-      # for
-      print(f"loss: {loss:.4f}")
+      print(f"{loss:.4f}")
   # for for
 
   # saving the model's parameters and the other data

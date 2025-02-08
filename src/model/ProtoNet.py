@@ -58,10 +58,10 @@ def main(path: str):
         sum = torch.zeros_like(embedded_features[0])
         for embedded_feature in embedded_features: sum += embedded_feature
         sum /= len(embedded_features)
-        prototypes.append(sum)
+        prototypes.append(sum.requires_grad_(True))
       # update loss
-      for feature, label in DataLoader(query_set, shuffle=True):
-        print(model(feature).size(), prototypes[label].size())
+      for feature, label in DataLoader(query_set.prototyping(prototypes), shuffle=True):
+        print(model.forward(feature).size(), label.size())
   # for for
 # main():
 
