@@ -4,6 +4,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from src.FewShotEpisoder import FewShotEpisoder
 from src.model.ProtoNet import ProtoNet
+from tqdm import tqdm
 
 def main(path, save_to, epochs=10, iters=5):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # init device
@@ -15,30 +16,30 @@ def main(path, save_to, epochs=10, iters=5):
     tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ]) # transform
   imageset = tv.datasets.ImageFolder(root=path)
-  episoder = FewShotEpisoder(imageset, 4, 4, 4, transform)
+  episoder = FewShotEpisoder(imageset, 2, 1, transform)
 
   # init learning
-  n_classes = episoder.n_classes
-  model = ProtoNet(episoder.n_way).to(device)
+  model = ProtoNet().to(device)
   optim = torch.optim.Adam(model.parameters(), lr=0.001)
   criterion = nn.CrossEntropyLoss()
 
-  for _ in range(epochs):
+  for _ in tqdm(range(epochs)):
     support_set, query_set = episoder.get_episode()
+    model.q_points = support_set.prototypes
+    loss = 0.
     for _ in range(iters):
-      for feature, label in DataLoader(support_set, shuffle=True):
+      for feature, label in DataLoader(query_set, shuffle=True):
         loss = criterion(model.forward(feature), support_set.prototypes[label])
         optim.zero_grad()
         loss.backward()
         optim.step()
-      for feature, label in DataLoader(query_set, shuffle=True):
-        print("", end="")
+      # for
+      print(f"loss: {loss:.4f}")
   # for for
 
   # saving the model's parameters and the other data
   features = {
     "state": model.state_dict(),
-    "n_oupt": n_classes
   }  # features
   torch.save(features, save_to)
 # main()
