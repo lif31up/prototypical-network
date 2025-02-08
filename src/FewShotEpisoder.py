@@ -105,8 +105,8 @@ def main(path: str):
         sum /= len(embedded_features)
         prototypes.append(sum)
       # update loss
-      for embedded_feature, label in DataLoader(query_set, shuffle=True):
-        print(embedded_feature.size(), prototypes[label].size())
+      for feature, label in DataLoader(query_set, shuffle=True):
+        print(feature.size(), prototypes[label].size())
   # for for
 # main():
 
