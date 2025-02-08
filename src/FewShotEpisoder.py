@@ -1,8 +1,7 @@
 import typing
-from tqdm import tqdm
 import torch
 import torchvision as tv
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 class FewShotDataset(Dataset):
   """ A custom Dataset class for Few-Shot Learning tasks.
@@ -78,39 +77,3 @@ class FewShotEpisoder:
     return support_set, query_set
   # get_episode()
 # Episoder()
-
-# mian function to simulate the few-shot learning pipeline.
-def main(path: str):
-  # define the image transformations
-  transform = tv.transforms.Compose([
-    tv.transforms.Resize((224, 224)),
-    tv.transforms.ToTensor(),
-    tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-  ]) # transform
-
-  # load the dataset
-  imageset = tv.datasets.ImageFolder(root=path)
-  episoder = FewShotEpisoder(imageset, 2, 2, transform)
-
-  # simulate training flow
-  epochs, iters = 2, 2
-  for _ in range(epochs):
-    support_set, query_set = episoder.get_episode()
-    prototypes = list()
-    for _ in tqdm(range(iters)):
-      # compute prototype from support examples
-      embedded_features_list = [[] for _ in range(len(support_set.classes))]
-      for embedded_feature, label in support_set: embedded_features_list[label].append(embedded_feature)
-      for embedded_features in embedded_features_list:
-        sum = torch.zeros_like(embedded_features[0])
-        for embedded_feature in embedded_features: sum += embedded_feature
-        sum /= len(embedded_features)
-        prototypes.append(sum.requires_grad_(True))
-      # update loss
-
-      for feature, label in DataLoader(query_set.prototyping(prototypes), shuffle=True):
-        print(feature.size(), label.size())
-  # for for
-# main():
-
-if __name__ == "__main__": main("../data/raw/omniglot-py/images_background/Korean")
