@@ -5,7 +5,6 @@ from torch.utils.data import DataLoader
 from src.FewShotEpisoder import FewShotEpisoder
 from tqdm import tqdm
 
-
 class ProtoNet(nn.Module):
   def __init__(self):
     super(ProtoNet, self).__init__()
@@ -16,15 +15,15 @@ class ProtoNet(nn.Module):
       nn.ReLU(),
     ) # encoder (down-scaling)
     self.decoder = nn.Sequential(
-      nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, stride=1, padding=1),  # (64, 224, 224)
+      nn.Conv2d(in_channels=128, out_channels=64, kernel_size=3, stride=1, padding=1),  # (64, 224, 224)
       nn.ReLU(),
       nn.Conv2d(in_channels=64, out_channels=3, kernel_size=3, stride=1, padding=1),  # (3, 224, 224)
     ) # decoder (up-scaling)
   # __init__():
 
   def forward(self, x):
-    self.encoder(x)
-    self.decoder(x)
+    x = self.encoder(x)
+    x = self.decoder(x)
     return x
   # forward
 # ProtoNet

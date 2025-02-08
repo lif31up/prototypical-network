@@ -48,6 +48,7 @@ def main(path, save_to, epochs=1, iters=10):
   # saving the model's parameters and the other data
   features = {
     "state": model.state_dict(),
+    "transform": transform,
   }  # features
   torch.save(features, save_to)
 # main()
