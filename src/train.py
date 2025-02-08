@@ -6,7 +6,7 @@ from src.FewShotEpisoder import FewShotEpisoder
 from src.model.ProtoNet import ProtoNet
 from tqdm import tqdm
 
-def main(path, save_to, k_shot, n_query, iters=10, epochs=1):
+def main(path, save_to, k_shot=3, n_query=3, iters=10, epochs=1):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # init device
 
   # create FSL episode generator
@@ -16,7 +16,7 @@ def main(path, save_to, k_shot, n_query, iters=10, epochs=1):
     tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ]) # transform
   imageset = tv.datasets.ImageFolder(root=path)
-  episoder = FewShotEpisoder(imageset, 3, 3, transform)
+  episoder = FewShotEpisoder(imageset, k_shot, n_query, transform)
 
   # init learning
   model = ProtoNet().to(device)
@@ -55,4 +55,4 @@ def main(path, save_to, k_shot, n_query, iters=10, epochs=1):
   torch.save(features, save_to)
 # main()
 
-if __name__ == "__main__": main("../data/raw/omniglot-py/images_background/Futurama", "./model/model.pth")
+if __name__ == "__main__": main(path="../data/raw/omniglot-py/images_background/Futurama", save_to="./model/model.pth")
