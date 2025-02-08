@@ -16,20 +16,19 @@ class FewShotDataset(Dataset):
     self.dataset, self.indices = [] if not dataset else dataset, indices # Initialize dataset (empty if not provided)
     self.mode, self.transform = mode, transform
     self.classes = dataset.classes
-    self.prototypes = None
   # __init__():
 
   def __getitem__(self, index):
     if index >= len(self.indices): raise IndexError("Index out of bounds")
     feature, label = self.dataset[self.indices[index]]
-    return self.transform(feature), self.prototypes[label] if self.mode == "query" else label
+    if self.mode == "query":
+      one_hot_vector = torch.zeros(len(self.classes))
+      one_hot_vector[label] = 1.
+      label = one_hot_vector.requires_grad_(True)
+    return self.transform(feature), label
   # __getitem__():
 
   def __len__(self): return len(self.indices)
-  def prototyping(self, prototypes):
-    self.prototypes = prototypes
-    return self
-  # prototyping()
 
 # FSLDataset()
 
