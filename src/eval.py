@@ -5,8 +5,8 @@ from src.FewShotEpisoder import FewShotEpisoder
 from src.model.ProtoNet import ProtoNet
 import torchvision as tv
 
-def main(model_path: str, testset_path: str):
-  data = torch.load(model_path)
+def main(model: str, path: str):
+  data = torch.load(model)
   state = data["state"]
   transform = data["transform"]
 
@@ -15,7 +15,7 @@ def main(model_path: str, testset_path: str):
   model.load_state_dict(state)
   model.eval()
 
-  imageset = tv.datasets.ImageFolder(root=testset_path)
+  imageset = tv.datasets.ImageFolder(root=path)
   episoder = FewShotEpisoder(imageset, 3, 3, transform)
 
   # compute prototype from support examples
