@@ -9,7 +9,7 @@ class FewShotDataset(Dataset):
   def __init__(self, dataset, indices, transform, mode="support"):
     """ Args:
         dataset (list): List of (feature, label) pairs.
-        n_classes (int): Number of classes in the dataset.
+        indices (list): List of indices to be used for the dataset.
         transform (callable): Transform to be applied to the features.
         mode (str): Mode of operation, either "support" or "query". Default is "support". """
     self.dataset, self.indices = [] if not dataset else dataset, indices # Initialize dataset (empty if not provided)
@@ -37,7 +37,6 @@ class FewShotEpisoder:
   def __init__(self, dataset: tv.datasets.ImageFolder, k_shot: int, n_query: int, transform: typing.Callable):
     """ Args:
         dataset (Dataset): The base dataset to generate episodes from.
-        n_way (int): Number of classes per episode.
         k_shot (int): Number of support samples per class.
         n_query (int): Number of query samples per class.
         transform (callable): Transform to be applied to the features. """
