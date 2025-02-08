@@ -6,8 +6,30 @@ from src.FewShotEpisoder import FewShotEpisoder
 from tqdm import tqdm
 
 class ProtoNet(nn.Module):
-  def __init__(self):
+  def __init__(self, prototypes):
     super(ProtoNet, self).__init__()
+    self.embedding_net = EmbeddingNet()
+    self.prototypes = prototypes
+  # __init__():
+
+  def encoder(self, x):
+    dists = torch.zeros(len(self.prototypes))
+    for index, q_point in enumerate(self.prototypes): dists[index] = torch.dist(q_point, x)
+    y = torch.zeros(len(self.prototypes))
+    y[torch.argmax(dists)] = 1.0
+    return y
+  # encoder()
+
+  def forward(self, x):
+    x = self.embedding_net(x)
+    x = self.encoder(x)
+    return x
+  # forward
+# ProtoNet
+
+class EmbeddingNet(nn.Module):
+  def __init__(self):
+    super(EmbeddingNet, self).__init__()
     self.encoder = nn.Sequential(
       nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, stride=1, padding=1),  # (64, 224, 224)
       nn.ReLU(),
