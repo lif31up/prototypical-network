@@ -16,29 +16,31 @@ def main(path, save_to, epochs=1, iters=10):
     tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ]) # transform
   imageset = tv.datasets.ImageFolder(root=path)
-  episoder = FewShotEpisoder(imageset, 4, 2, transform)
+  episoder = FewShotEpisoder(imageset, 3, 3, transform)
 
   # init learning
   model = ProtoNet().to(device)
-  optim = torch.optim.Adam(model.parameters(), lr=0.001)
+  optim = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.01)
   criterion = nn.CrossEntropyLoss()
 
   for _ in tqdm(range(epochs), desc="epochs/episodes"):
     support_set, query_set = episoder.get_episode()
+    # compute prototype from support examples
     prototypes = list()
+    embedded_features_list = [[] for _ in range(len(support_set.classes))]
+    for embedded_feature, label in support_set: embedded_features_list[label].append(embedded_feature)
+    for embedded_features in embedded_features_list:
+      sum = torch.zeros_like(embedded_features[0])
+      for embedded_feature in embedded_features: sum += embedded_feature
+      sum /= len(embedded_features)
+      prototypes.append(sum.flatten())
+    prototypes = torch.stack(prototypes)
+    model.prototyping(prototypes)
     for _ in tqdm(range(iters), desc="\titerations/queries"):
-      # compute prototype from support examples
-      embedded_features_list = [[] for _ in range(len(support_set.classes))]
-      for embedded_feature, label in support_set: embedded_features_list[label].append(embedded_feature)
-      for embedded_features in embedded_features_list:
-        sum = torch.zeros_like(embedded_features[0])
-        for embedded_feature in embedded_features: sum += embedded_feature
-        sum /= len(embedded_features)
-        prototypes.append(sum.requires_grad_(True))
       # update loss
       loss = float()
-      for x, y in DataLoader(query_set.prototyping(prototypes), shuffle=True):
-        loss = criterion(model.forward(x), y)
+      for feature, label in DataLoader(query_set, shuffle=True):
+        loss = criterion(model.forward(feature), label.squeeze(dim=0))
         optim.zero_grad()
         loss.backward()
         optim.step()
@@ -53,4 +55,4 @@ def main(path, save_to, epochs=1, iters=10):
   torch.save(features, save_to)
 # main()
 
-if __name__ == "__main__": main("../data/raw/omniglot-py/images_background/Korean", "./model/model.pth")
+if __name__ == "__main__": main("../data/raw/omniglot-py/images_background/Futurama", "./model/model.pth")
