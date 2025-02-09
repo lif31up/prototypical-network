@@ -1,4 +1,6 @@
 `torch` `torchvision` `tqdm`
+
+This implementation is inspired by **"Prototypical Networks for Few-Shot Learning" (Snell et al., 2017)**.
 * **task**: classifying image with few dataset.
 * **dataset**: downloaded from `torch` dataset library.
 
@@ -6,6 +8,8 @@
 This repository implements a Prototypical Network for few-shot image classification tasks using PyTorch. Prototypical Networks are designed to tackle the challenge of classifying new classes with limited examples by learning a metric space where classification is performed based on distances to prototype representations of each class.
 
 Few-shot learning aims to enable models to generalize to new classes with only a few labeled examples. Prototypical Networks achieve this by computing a prototype (mean embedding) for each class and classifying query samples based on their distances to these prototypes in the embedding space.
+
+<a href="https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing">Test Result on Colab Notebook</a>
 
 ## Instruction
 Organize your dataset into a structure compatible with PyTorch's ImageFolder:
@@ -48,6 +52,3 @@ Prototypical Networks are a powerful approach for **few-shot learning**, where t
 * **Prototype Computation**: The prototype for each class is computed as the mean of the embeddings of support samples belonging to that class.
 * **Distance-Based Classification**: Query samples are classified based on the distance (using `torch.cdist`) to the nearest prototype.
 * **Optimization**: The network is trained to minimize the distance between query samples and their correct prototypes while maximizing the distance to incorrect ones.
-
-This implementation is inspired by **"Prototypical Networks for Few-Shot Learning" (Snell et al., 2017)**.
-

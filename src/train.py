@@ -32,6 +32,7 @@ def main(path, save_to, k_shot=3, n_query=3, iters=10, epochs=1):
     for embedded_features in embedded_features_list:
       class_prototype = torch.stack(embedded_features).mean(dim=0)
       prototypes.append(class_prototype.flatten())
+    # for
     prototypes = torch.stack(prototypes)
     model.prototyping(prototypes)
     for _ in tqdm(range(iters), desc="\titerations/queries"):
@@ -43,7 +44,7 @@ def main(path, save_to, k_shot=3, n_query=3, iters=10, epochs=1):
         loss.backward()
         optim.step()
       print(f"loss: {total_loss / len(query_set):.4f}")
-    # for for
+  # for for for
 
   # saving the model's parameters and the other data
   features = {
