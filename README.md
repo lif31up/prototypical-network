@@ -29,11 +29,11 @@ dataset/
 ### Training
 Run the training script with desired parameters:
 ```
-python run.py train --dataset-path path/to/your/dataset --save-to /path/to/save/model --k-shot 2 --n-query 4 --epochs 1 --iterations 4
+python run.py train --dataset_path path/to/your/dataset --save_to /path/to/save/model --k_shot 2 --n_query 4 --epochs 1 --iterations 4
 ```
-* `dataset-path`: Path to your dataset.
-* `k-shot`: Number of support samples per class.
-* `n-query`: Number of query samples per class.
+* `dataset_path`: Path to your dataset.
+* `k_shot`: Number of support samples per class.
+* `n_query`: Number of query samples per class.
 * `epochs`: Number of episodes.
 * `iters`: Number of training epochs.
 
