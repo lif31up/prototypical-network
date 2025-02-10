@@ -5,7 +5,7 @@ from src.FewShotEpisoder import FewShotEpisoder
 from src.model.ProtoNet import ProtoNet
 import torchvision as tv
 
-def main(model: str, path: str):
+def main(model: str, path: str, n_way=5):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
   # load model
@@ -18,7 +18,8 @@ def main(model: str, path: str):
 
   # create FSL episode generator
   imageset = tv.datasets.ImageFolder(root=path)
-  episoder = FewShotEpisoder(imageset, imageset.class_to_idx.values(), 2, 1, transform)
+  chosen_classes = list(imageset.class_to_idx.values())[:n_way]
+  episoder = FewShotEpisoder(imageset, chosen_classes, 2, 1, transform)
 
   # compute prototype from support examples
   support_set, query_set = episoder.get_episode()

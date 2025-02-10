@@ -6,7 +6,7 @@ from src.FewShotEpisoder import FewShotEpisoder
 from src.model.ProtoNet import ProtoNet
 from tqdm import tqdm
 
-def main(path, save_to, k_shot=3, n_query=3, iters=10, epochs=1):
+def main(path, save_to, n_way=5, k_shot=5, n_query=2, iters=10, epochs=1):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # init device
 
   # create FSL episode generator
@@ -16,7 +16,8 @@ def main(path, save_to, k_shot=3, n_query=3, iters=10, epochs=1):
     tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ]) # transform
   imageset = tv.datasets.ImageFolder(root=path)
-  episoder = FewShotEpisoder(imageset, imageset.class_to_idx.values(), k_shot, n_query, transform)
+  chosen_classes = list(imageset.class_to_idx.values())[:n_way]
+  episoder = FewShotEpisoder(imageset, chosen_classes, k_shot, n_query, transform)
 
   # init learning
   model = ProtoNet(3).to(device)

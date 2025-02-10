@@ -29,20 +29,29 @@ dataset/
 ### Training
 Run the training script with desired parameters:
 ```
-python run.py train --dataset-path path/to/your/dataset --save-to /path/to/save/model --k-shot 2 --n-query 4 --epochs 1 --iterations 4
+python run.py train --dataset_path path/to/your/dataset --save_to /path/to/save/model --n_way 5 --k_shot 2 --n_query 4 --epochs 1 --iters 4
 ```
-* `dataset-path`: Path to your dataset.
-* `k-shot`: Number of support samples per class.
-* `n-query`: Number of query samples per class.
+* `dataset_path`: Path to your dataset.
+* `save_to`: path to save the trained model.
+* `n_way`: number of classes in each episode.
+* `k_shot`: Number of support samples per class.
+* `n-_query`: Number of query samples per class.
 * `epochs`: Number of episodes.
 * `iters`: Number of training epochs.
 
 ### Evaluation
 ```
-python run.py --dataset_path path/to/your/dataset --model_path path/to/saved/model.pth
+python run.py --path path/to/your/dataset --model path/to/saved/model.pth --n_way 5
 ```
-* `testset_path`: Path to your dataset.
-* `model_path`: Path to your model.
+* `path`: Path to your dataset.
+* `model`: Path to your model.
+* `n_way`: Number of classes in each episode.
+
+### Download Omniglot Dataset
+```
+pyhton download --path
+```
+* `path`: Path to save your dataset.
 
 ---
 ### More Explanation
