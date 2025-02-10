@@ -81,24 +81,3 @@ class FewShotEpisoder:
     return support_set, query_set
   # get_episode()
 # Episoder()
-
-def main(path):
-  # create FSL episode generator
-  transform = torchvision.transforms.Compose([
-    torchvision.transforms.Resize((224, 224)),
-    torchvision.transforms.ToTensor(),
-    torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-  ])  # transform
-  imageset = torchvision.datasets.ImageFolder(root=path)
-
-  n_way, k_shot, n_query = 5, 5, 2
-  chosen_classes = list(imageset.class_to_idx.values())[:n_way]
-  print(chosen_classes)
-
-  episoder = FewShotEpisoder(imageset, chosen_classes, k_shot, n_query, transform)
-
-  support_set, query_set = episoder.get_episode()
-  print(len(support_set), len(query_set))
-# main():
-
-if __name__ == "__main__": main("../data/raw/omniglot-py/images_background/Futurama")
