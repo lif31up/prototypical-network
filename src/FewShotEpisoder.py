@@ -1,6 +1,7 @@
 import random
 import typing
 import torch
+import torchvision
 from torch.utils.data import Dataset
 import torch.nn.functional as F
 
@@ -57,7 +58,8 @@ class FewShotEpisoder:
     """ Initialize the class indices for the dataset.
         Returns: tuple of Number of classes and a list of indices grouped by class. """
     indices_c = {label: [] for label in range(len(self.classes))}
-    for index, (_, label) in enumerate(self.dataset): indices_c[label].append(index)
+    for index, (_, label) in enumerate(self.dataset):
+      if label in self.classes: indices_c[label].append(index)
     return indices_c
   # get_indices():
 
