@@ -51,7 +51,7 @@ python run.py --path path/to/your/dataset --model path/to/saved/model.pth --n_wa
 ```
 pyhton download --path
 ```
-* `path`: Path to save your dataset.
+* `path`: Path to your dataset.
 
 ---
 ### More Explanation
