@@ -11,7 +11,7 @@ Few-shot learning aims to enable models to generalize to new classes with only a
 
 > You can access the full documentation here: [gitbook](https://lif31up.gitbook.io/lif31up/meta-learning/prototypical-networks-for-few-shot-learning)
 
-> You can access the test result on colab here: [test result on colab](https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing)
+> You can access the test result on colab here: [colab](https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing)
 
 ## Instruction
 Organize your dataset into a structure compatible with PyTorch's ImageFolder:
