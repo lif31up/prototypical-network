@@ -9,7 +9,9 @@ This repository implements a Prototypical Network for few-shot image classificat
 
 Few-shot learning aims to enable models to generalize to new classes with only a few labeled examples. Prototypical Networks achieve this by computing a prototype (mean embedding) for each class and classifying query samples based on their distances to these prototypes in the embedding space.
 
-<a href="https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing">Test Result on Colab</a>
+> You can access the full documentation here: [gitbook](https://lif31up.gitbook.io/lif31up/meta-learning/prototypical-networks-for-few-shot-learning)
+
+> You can access the test result on colab here: [test result on colab](https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing)
 
 ## Instruction
 Organize your dataset into a structure compatible with PyTorch's ImageFolder:
