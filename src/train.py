@@ -5,8 +5,9 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 from src.FewShotEpisoder import FewShotEpisoder
 from src.model.ProtoNet import ProtoNet
+from config import TRAINING_CONFIG, HYPERPARAMETER_CONFIG
 
-def train(DATASET:str, SAVE_TO:str, N_WAY:int, K_SHOT:int, N_QUERY:int, IETRS:int, EPOCHS:int):
+def train(DATASET:str, SAVE_TO:str, N_WAY:int, K_SHOT:int, N_QUERY:int, IETRS=TRAINING_CONFIG["iters"], EPOCHS=TRAINING_CONFIG["epochs"]):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # init device
 
   # define transform
@@ -24,7 +25,7 @@ def train(DATASET:str, SAVE_TO:str, N_WAY:int, K_SHOT:int, N_QUERY:int, IETRS:in
   # init model
   model_config = {"in_channels": 3, "hidden_channels": 26, "output_channels": 3}
   model = ProtoNet(*model_config.values()).to(device)
-  optim = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.01)
+  optim = torch.optim.Adam(model.parameters(), lr=HYPERPARAMETER_CONFIG["lr"], weight_decay=HYPERPARAMETER_CONFIG["weight_decay"])
   criterion = nn.CrossEntropyLoss()
 
   progress_bar, whole_loss = tqdm(range(EPOCHS)), float()

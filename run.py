@@ -24,9 +24,7 @@ def main():
     SAVE_TO=kwargs.save_to,
     N_WAY=kwargs.n_way,
     K_SHOT=kwargs.k_shot,
-    N_QUERY=kwargs.n_query,
-    IETRS=kwargs.iters,
-    EPOCHS=kwargs.epochs)
+    N_QUERY=kwargs.n_query)
   ) # parser_train.set_defaults()
 
   # download dataset
