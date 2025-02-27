@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-import torch.nn.functional as F
+import torch.nn.functional as torch_f
 
 class ProtoNet(nn.Module):
   def __init__(self, in_channels=3, hidden_channel=26, output_channel=3):
@@ -21,7 +21,7 @@ class ProtoNet(nn.Module):
     if metric == "euclidean":
       dists = torch.cdist(x, self.prototypes, p=2)  # L2 distance
     elif metric == "cosine":
-      dists = 1 - F.cosine_similarity(x.unsqueeze(1), self.prototypes.unsqueeze(0), dim=2)  # 1 - cosine similarity
+      dists = 1 - torch_f.cosine_similarity(x.unsqueeze(1), self.prototypes.unsqueeze(0), dim=2)  # 1 - cosine similarity
     else:
       raise ValueError("Unsupported distance metric. Choose 'euclidean' or 'cosine'.")
     return dists

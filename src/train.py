@@ -1,12 +1,12 @@
 import torch.cuda
 import torchvision as tv
 from torch import nn
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 from src.FewShotEpisoder import FewShotEpisoder
 from src.model.ProtoNet import ProtoNet
-from tqdm import tqdm
 
-def main(path:str, save_to:str, n_way:int, k_shot:int, n_query:int, iters:int, epochs:int):
+def train(DATASET:str, SAVE_TO:str, N_WAY:int, K_SHOT:int, N_QUERY:int, IETRS:int, EPOCHS:int):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # init device
 
   # define transform
@@ -17,9 +17,9 @@ def main(path:str, save_to:str, n_way:int, k_shot:int, n_query:int, iters:int, e
   ]) # transform
 
   # init episode generator
-  imageset = tv.datasets.ImageFolder(root=path)
-  chosen_classes = list(imageset.class_to_idx.values())[:n_way]
-  episoder = FewShotEpisoder(imageset, chosen_classes, k_shot, n_query, transform)
+  imageset = tv.datasets.ImageFolder(root=DATASET)
+  chosen_classes = list(imageset.class_to_idx.values())[:N_WAY]
+  episoder = FewShotEpisoder(imageset, chosen_classes, K_SHOT, N_QUERY, transform)
 
   # init model
   model_config = {"in_channels": 3, "hidden_channels": 26, "output_channels": 3}
@@ -27,7 +27,7 @@ def main(path:str, save_to:str, n_way:int, k_shot:int, n_query:int, iters:int, e
   optim = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=0.01)
   criterion = nn.CrossEntropyLoss()
 
-  progress_bar, whole_loss = tqdm(range(epochs)), float()
+  progress_bar, whole_loss = tqdm(range(EPOCHS)), float()
   for _ in progress_bar:
     support_set, query_set = episoder.get_episode()
     # STAGE1: compute prototype from support examples
@@ -42,7 +42,7 @@ def main(path:str, save_to:str, n_way:int, k_shot:int, n_query:int, iters:int, e
     model.prototyping(prototypes)
     # STAGE2: update parameters form loss associated with prototypes
     epochs_loss = 0.0
-    for _ in range(iters):
+    for _ in range(IETRS):
       iter_loss = 0.0
       for feature, label in DataLoader(query_set, shuffle=True):
         loss = criterion(model.forward(feature), label)
@@ -52,18 +52,20 @@ def main(path:str, save_to:str, n_way:int, k_shot:int, n_query:int, iters:int, e
         optim.step()
       epochs_loss += iter_loss / len(query_set)
     # for # for
-    epochs_loss = epochs_loss / iters
+    epochs_loss = epochs_loss / IETRS
     progress_bar.set_postfix(loss=epochs_loss)
   # for
 
   # saving the model's parameters and the other data
   features = {
     "state": model.state_dict(),
-    "model config": model_config,
-    "episoder": episoder,
+    "model_config": model_config,
+    "transform": transform,
+    "chosen_classes": chosen_classes,
+    "framework": (N_WAY, K_SHOT, N_QUERY)
   }  # features
-  torch.save(features, save_to)
-  print(f"model save to {save_to}")
+  torch.save(features, SAVE_TO)
+  print(f"model save to {SAVE_TO}")
 # main()
 
-if __name__ == "__main__": main("../data/omniglot-py/images_background/Futurama", "./model/model.pth", 5, 5, 2, 5, 5)
+if __name__ == "__main__": train("../data/omniglot-py/images_background/Futurama", "./model/model.pth", 5, 5, 2, 5, 5)
