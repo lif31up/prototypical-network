@@ -33,7 +33,7 @@ Run the training script with desired parameters:
 ```
 python run.py train --dataset_path path/to/your/dataset --save_to /path/to/save/model --n_way 5 --k_shot 2 --n_query 4 --epochs 1 --iters 4
 ```
-* `dataset_path`: Path to your dataset.
+* `dataset`: Path to your dataset.
 * `save_to`: path to save the trained model.
 * `n_way`: number of classes in each episode.
 * `k_shot`: Number of support samples per class.
@@ -45,9 +45,8 @@ python run.py train --dataset_path path/to/your/dataset --save_to /path/to/save/
 ```
 python run.py --path path/to/your/dataset --model path/to/saved/model.pth --n_way 5
 ```
-* `path`: Path to your dataset.
+* `dataset`: Path to your dataset.
 * `model`: Path to your model.
-* `n_way`: Number of classes in each episode.
 
 ### Download Omniglot Dataset
 ```
