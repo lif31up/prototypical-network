@@ -1,14 +1,12 @@
 import argparse
-import src.train as train
-import src.eval as eval
+import src.train as TRAIN
+import src.eval as EVAL
 import torchvision as tv
 
 def main():
   # eval(default)
   parser = argparse.ArgumentParser(description="Few-shot learning using Prototypical Network")
-  parser.add_argument("--path", type=str, help="path of your model")
   parser.add_argument("--model", type=str, help="path of your model")
-  parser.add_argument("--n_way", type=int, help="number of classes per episode")
 
   # train
   subparser = parser.add_subparsers(title="subcommands", dest="subcommand")
@@ -20,8 +18,8 @@ def main():
   parser_train.add_argument("--n_query", type=int, help="number of query samples per class")
   parser_train.add_argument("--iters", type=int, help="how much iteration your model does for an episode")
   parser_train.add_argument("--epochs", type=int, help="how much epochs your model does for training")
-  parser_train.set_defaults(func=lambda kwargs: train.main(
-    path=kwargs.dataset_path,
+  parser_train.set_defaults(func=lambda kwargs: TRAIN.main(
+    path=kwargs.path,
     save_to=kwargs.save_to,
     n_way=kwargs.n_way,
     k_shot=kwargs.k_shot,
@@ -37,7 +35,7 @@ def main():
 
   args = parser.parse_args()
   if hasattr(args, 'func'): args.func(args)
-  elif args.path and args.model: eval.main(model=args.path, path=args.model, n_way=args.n_way)
+  elif args.path and args.model: EVAL.main(model=args.model)
   else: print("invalid argument. exiting program.")
 # main():
 
