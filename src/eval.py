@@ -5,21 +5,18 @@ from src.FewShotEpisoder import FewShotEpisoder
 from src.model.ProtoNet import ProtoNet
 import torchvision as tv
 
-def main(model: str, path: str, n_way=5):
+def main(model: str):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
   # load model
   data = torch.load(model)
   state = data["state"]
-  transform = data["transform"]
-  model = ProtoNet().to(device)
+  model = ProtoNet(*data["model config"].values()).to(device)
   model.load_state_dict(state)
   model.eval()
 
   # create FSL episode generator
-  imageset = tv.datasets.ImageFolder(root=path)
-  chosen_classes = list(imageset.class_to_idx.values())[:n_way]
-  episoder = FewShotEpisoder(imageset, chosen_classes, 2, 1, transform)
+  episoder = data["episoder"]
 
   # compute prototype from support examples
   support_set, query_set = episoder.get_episode()
@@ -40,7 +37,7 @@ def main(model: str, path: str, n_way=5):
     loss = criterion(pred, label)
     total_loss += loss.item()
     if torch.argmax(pred) == torch.argmax(label): count += 1
-  print(f"loss: {total_loss / len(query_set):.4f} accuracy: {count / n_problem:.4f}({count}/{n_problem})")
+  print(f"accuracy: {count / n_problem:.4f}({count}/{n_problem})")
 # main()
 
-if __name__ == "__main__": main("./model/model.pth", "../data/raw/omniglot-py/images_background/Futurama")
+if __name__ == "__main__": main("./model/model.pth")
