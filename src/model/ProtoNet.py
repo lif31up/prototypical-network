@@ -3,11 +3,11 @@ from torch import nn
 import torch.nn.functional as F
 
 class ProtoNet(nn.Module):
-  def __init__(self, in_channels=3, hidden_channel=26):
+  def __init__(self, in_channels=3, hidden_channel=26, output_channel=3):
     super(ProtoNet, self).__init__()
     self.conv1 = nn.Conv2d(in_channels, hidden_channel, kernel_size=3, stride=1, padding=1)
     self.conv2 = nn.Conv2d(hidden_channel, hidden_channel, kernel_size=3, stride=1, padding=1)
-    self.conv3 = nn.Conv2d(hidden_channel, in_channels, kernel_size=3, stride=1, padding=1)
+    self.conv3 = nn.Conv2d(hidden_channel, output_channel, kernel_size=3, stride=1, padding=1)
     self.relu = nn.ReLU()
     self.flatten = nn.Flatten()
     self.softmax = nn.LogSoftmax(dim=1)
