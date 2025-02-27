@@ -7,7 +7,7 @@ import torch.nn.functional as F
 class FewShotDataset(Dataset):
   """ A custom Dataset class for Few-Shot Learning tasks.
     This dataset can operate in two modes: "support" (for prototype calculation) and "query" (for evaluation). """
-  def __init__(self, dataset: typing.Iterable, indices: list, classes: list, transform:typing.Callable, mode="support"):
+  def __init__(self, dataset, indices: list, classes: list, transform:typing.Callable, mode="support"):
     """ Args:
         dataset (list): List of (feature, label) pairs.
         indices (list): List of indices to be used for the dataset.
