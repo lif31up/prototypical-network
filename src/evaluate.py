@@ -1,3 +1,4 @@
+import random
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
@@ -19,13 +20,14 @@ def evaluate(MODEL: str, DATASET: str):
 
   # create FSL episode generator
   imageset = tv.datasets.ImageFolder(root=DATASET)
-  episoder = FewShotEpisoder(imageset, data["chosen_classes"], k_shot, n_query, data["transform"])
+  unseen_classes = [_ for _ in random.sample(list(imageset.class_to_idx.values()), n_way)]
+  episoder = FewShotEpisoder(imageset, unseen_classes, k_shot, n_query, data["transform"])
 
   # compute prototype from support examples
   support_set, query_set = episoder.get_episode()
   prototypes = list()
   embedded_features_list = [[] for _ in range(len(support_set.classes))]
-  for embedded_feature, label in support_set: embedded_features_list[label].append(embedded_feature)
+  for embedded_feature, label in support_set: embedded_features_list[unseen_classes.index(label)].append(embedded_feature)
   for embedded_features in embedded_features_list:
     class_prototype = torch.stack(embedded_features).mean(dim=0)
     prototypes.append(class_prototype.flatten())
@@ -40,7 +42,7 @@ def evaluate(MODEL: str, DATASET: str):
     loss = criterion(pred, label)
     total_loss += loss.item()
     if torch.argmax(pred) == torch.argmax(label): count += 1
-  print(f"accuracy: {count / n_problem:.4f}({count}/{n_problem})")
+  print(f"seen classes: {data['seen_classes']}\nunseen classes: {unseen_classes}\naccuracy: {count / n_problem:.4f}({count}/{n_problem})")
 # main()
 
 if __name__ == "__main__": evaluate("./model/model.pth", "../data/omniglot-py/images_background/Futurama")

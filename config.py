@@ -1,8 +1,8 @@
 HYPERPARAMETER_CONFIG = {
-  "lr": 0.001,
+  "lr": 0.0001,
   "weight_decay": 0.0001
 } # HYPERPARAMETER_CONFIG
 TRAINING_CONFIG = {
   "iters": 10,
-  "epochs": 10,
+  "epochs": 30,
 } # TRAINING_CONFIG
