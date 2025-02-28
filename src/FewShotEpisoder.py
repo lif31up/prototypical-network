@@ -30,7 +30,7 @@ class FewShotDataset(Dataset):
     # apply transformation
     feature = self.transform(feature)
     if self.mode == "query": # if mode is query, convert label to one-hot vector
-      label = F.one_hot(torch.tensor(label), num_classes=len(self.classes)).float()
+      label = F.one_hot(torch.tensor(self.classes.index(label)), num_classes=len(self.classes)).float()
     return feature, label
   # __getitem__():
 
@@ -56,9 +56,9 @@ class FewShotEpisoder:
   def get_class_indices(self) -> dict:
     """ Initialize the class indices for the dataset.
         Returns: tuple of Number of classes and a list of indices grouped by class. """
-    indices_c = {label: [] for label in range(len(self.classes))}
+    indices_c = {label: [] for label in range(self.classes.__len__())}
     for index, (_, label) in enumerate(self.dataset):
-      if label in self.classes: indices_c[label].append(index)
+      if label in self.classes: indices_c[self.classes.index(label)].append(index)
     for label, _indices_c in indices_c.items():
       indices_c[label] = random.sample(_indices_c, self.k_shot + self.n_query)
     return indices_c
@@ -69,8 +69,8 @@ class FewShotEpisoder:
         Returns: tuple of A FewShotDataset for the support set and a FewShotDataset for the query set. """
     # get support and query examples
     support_examples, query_examples = [], []
-    for class_label in self.classes:
-      if len(self.indices_c[class_label]) < self.k_shot + self.n_query: continue # skip class if it doesn't have enough samples
+    for class_label in range(self.classes.__len__()):
+      if len(self.indices_c[class_label]) < self.k_shot + self.n_query: continue  # skip class if it doesn't have enough samples
       selected_indices = random.sample(self.indices_c[class_label], self.k_shot + self.n_query)
       support_examples.extend(selected_indices[:self.k_shot])
       query_examples.extend(selected_indices)
