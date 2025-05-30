@@ -2,6 +2,7 @@
 **/data
 *.pth
 **/__pycache__/
+**.safetensors
 
 # pycharm
 .idea

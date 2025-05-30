@@ -1,7 +1,7 @@
 import argparse
 import torchvision as tv
 from src.train import train
-from src.evaluate import evaluate
+from src.eval import evaluate
 
 def main():
   # eval(default)
