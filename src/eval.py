@@ -92,4 +92,4 @@ def evaluates(MODEL: str, DATASET: str):
   print(f"seen classes: {data['seen_classes']}\naccuracy: {count / n_problem:.4f}({count}/{n_problem})")
 # main()
 
-if __name__ == "__main__": evaluates("./model/5w5s.bin", "../data/omniglot-py/images_background/Futurama")
+if __name__ == "__main__": evaluates("../src/model/model.pth", "../data/omniglot-py/images_background/Futurama")

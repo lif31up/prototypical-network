@@ -30,8 +30,8 @@ def train(DATASET:str, SAVE_TO:str):
   criterion = nn.CrossEntropyLoss()
 
   progress_bar, whole_loss = tqdm(range(TRAINING_CONFIG['epochs'])), float()
-  support_set, query_set = episoder.get_episode()
   for _ in progress_bar:
+    support_set, query_set = episoder.get_episode()
     # STAGE1: compute prototype from support examples
     prototypes = list()
     embedded_features_list = [[] for _ in range(len(support_set.classes))]
