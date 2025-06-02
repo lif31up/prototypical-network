@@ -8,7 +8,7 @@ class ProtoNet(nn.Module):
     self.conv1 = nn.Conv2d(in_channels, hidden_channel, kernel_size=3, stride=1, padding=1)
     self.conv2 = nn.Conv2d(hidden_channel, hidden_channel, kernel_size=3, stride=1, padding=1)
     self.conv3 = nn.Conv2d(hidden_channel, output_channel, kernel_size=3, stride=1, padding=1)
-    self.relu = nn.ReLU()
+    self.swish = nn.SiLU()
     self.flatten = nn.Flatten()
     self.softmax = nn.LogSoftmax(dim=1)
   # __init__():
@@ -29,11 +29,11 @@ class ProtoNet(nn.Module):
 
   def forward(self, x):
     x = self.conv1(x)
-    x = self.relu(x)
+    x = self.swish(x)
     x = self.conv2(x)
-    x = self.relu(x)
+    x = self.swish(x)
     x = self.conv3(x)
-    x = self.relu(x)
+    x = self.swish(x)
     x = self.flatten(x)
     x = self.cdist(x, metric="euclidean")
     return self.softmax(-x)
