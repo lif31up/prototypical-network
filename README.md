@@ -13,8 +13,6 @@ Few-shot learning aims to enable models to generalize to new classes with only a
 
 > You can quickstart on [Colab](https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing)
 
-> You can access the safetensor on huggingface here: [huggingface](https://huggingface.co/lif31up/prototypical-network)
-
 ## Instruction
 Organize your dataset into a structure compatible with PyTorch's ImageFolder:
 ```
