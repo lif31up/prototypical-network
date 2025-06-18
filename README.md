@@ -1,5 +1,3 @@
-`torch` `torchvision` `tqdm`
-
 This implementation is inspired by **"Prototypical Networks for Few-Shot Learning" (Snell et al., 2017)**.
 * **task**: classifying image with few dataset.
 * **dataset**: downloaded from `torch` dataset library.
@@ -9,7 +7,7 @@ This repository implements a Prototypical Network for few-shot image classificat
 
 Few-shot learning aims to enable models to generalize to new classes with only a few labeled examples. Prototypical Networks achieve this by computing a prototype (mean embedding) for each class and classifying query samples based on their distances to these prototypes in the embedding space.
 
-> Check out the full explanation in [GitBook](https://lif31up.gitbook.io/lif31up/meta-learning/prototypical-networks-for-few-shot-learning)
+> Check out the full explanation in [GitBook](https://lif31up.gitbook.io/lif31up/few-shot-learning/prototypical-networks-for-few-shot-learning)
 
 > You can quickstart on [Colab](https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing)
 
