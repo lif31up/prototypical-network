@@ -1,5 +1,3 @@
-`torch` `torchvision` `tqdm`
-
 This implementation is inspired by **"Prototypical Networks for Few-Shot Learning" (Snell et al., 2017)**.
 * **task**: classifying image with few dataset.
 * **dataset**: downloaded from `torch` dataset library.
