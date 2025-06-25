@@ -4,7 +4,7 @@ from torch import nn
 def stack(in_channels, out_channels, kernel_size):
   return nn.Sequential(
     nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, padding=1),
-    nn.GELU(),
+    nn.SiLU(),
   )  # nn.Sequential
 # stack():
 

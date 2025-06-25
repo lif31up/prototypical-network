@@ -48,5 +48,4 @@ def evaluate(MODEL: str, DATASET: str):
   print(f"seen classes: {data['seen_classes']}\nunseen classes: {unseen_classes}\naccuracy: {count / n_problem:.4f}({count}/{n_problem})")
 # main()
 
-if __name__ == "__main__":
-  for _ in range(10): evaluate("../src/model/model.pth", "../data/omniglot-py/images_background/Futurama")
+if __name__ == "__main__": evaluate("../src/model/model.pth", "../data/omniglot-py/images_background/Futurama")
