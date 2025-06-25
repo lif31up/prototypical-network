@@ -4,68 +4,55 @@ import torchvision as tv
 from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
+from config import CONFIG
 from src.FewShotEpisoder import FewShotEpisoder
-from src.model.ProtoNet import ProtoNet
-from config import TRAINING_CONFIG, HYPER_PARAMETERS, MODEL_CONFIG, FRAMEWORK
+from src.model.ProtoNet import ProtoNet, get_prototypes
 from safetensors.torch import save_file
 
-def train(DATASET:str, SAVE_TO:str):
-  device = torch.device("cuda" if torch.cuda.is_available() else "cpu") # init device
-
-  # define transform
+def train(DATASET, SAVE_TO, config=CONFIG):
   transform = tv.transforms.Compose([
     tv.transforms.Resize((224, 224)),
     tv.transforms.ToTensor(),
     tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ]) # transform
 
-  # init episode generator
   imageset = tv.datasets.ImageFolder(root=DATASET)
-  seen_classes = [_ for _ in random.sample(list(imageset.class_to_idx.values()), FRAMEWORK['n_way'])]
-  episoder = FewShotEpisoder(imageset, seen_classes, FRAMEWORK['k_shot'], FRAMEWORK['n_query'], transform)
+  seen_classes = [_ for _ in random.sample(list(imageset.class_to_idx.values()), config['n_way'])]
+  episoder = FewShotEpisoder(imageset, seen_classes, config['k_shot'], config['n_query'], transform)
 
-  # init model
-  model = ProtoNet(*MODEL_CONFIG.values()).to(device)
-  optim = torch.optim.Adam(model.parameters(), lr=HYPER_PARAMETERS["lr"], weight_decay=HYPER_PARAMETERS["weight_decay"])
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  model = ProtoNet(config).to(device)
+  optim = torch.optim.Adam(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
   criterion = nn.CrossEntropyLoss()
+  scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lambda step: min((step + 1) ** -0.5, (step + 1) * 1e-3))
 
-  progress_bar, whole_loss = tqdm(range(TRAINING_CONFIG['epochs'])), float()
+  progress_bar, whole_loss = tqdm(range(config['epochs'])), float()
   for _ in progress_bar:
     support_set, query_set = episoder.get_episode()
     # STAGE1: compute prototype from support examples
-    prototypes = list()
-    embedded_features_list = [[] for _ in range(len(support_set.classes))]
-    for embedded_feature, label in support_set: embedded_features_list[seen_classes.index(label)].append(embedded_feature)
-    for embedded_features in embedded_features_list:
-      class_prototype = torch.stack(embedded_features).mean(dim=0)
-      prototypes.append(class_prototype.flatten())
-    # for
-    prototypes = torch.stack(prototypes)
-    model.prototyping(prototypes)
+    prototypes = get_prototypes(support_set, seen_classes)
     # STAGE2: update parameters form loss associated with prototypes
-    epochs_loss = 0.0
-    for _ in range(TRAINING_CONFIG['iters']):
-      iter_loss = 0.0
-      for feature, label in DataLoader(query_set, batch_size=TRAINING_CONFIG["batch_size"], shuffle=True, pin_memory=True, num_workers=4):
-        loss = criterion(model.forward(feature), label)
-        iter_loss += loss.item()
+    epoch_loss = list()
+    for _ in range(config['iters']):
+      iter_loss, vuffer = list(), 0
+      for feature, label in DataLoader(query_set, batch_size=config['batch_size'], shuffle=True):
+        pred = model.forward(feature, prototypes)
+        loss = criterion(pred, label)
         optim.zero_grad()
         loss.backward()
         optim.step()
-      epochs_loss += iter_loss / len(query_set)
-    # for # for
-    epochs_loss = epochs_loss / TRAINING_CONFIG['iters']
-    progress_bar.set_postfix(loss=epochs_loss)
-  # for
+        scheduler.step()
+        iter_loss.append(loss.item())
+      vuffer = sum(iter_loss) / len(iter_loss)
+      progress_bar.set_postfix(iter_loss=vuffer)
+      epoch_loss.append(vuffer)
+    progress_bar.set_postfix(loss=sum(epoch_loss) / len(epoch_loss))
+  # for for for
 
   # saving model
   features = {
-    "sate": model.state_dict(),
-    "FRAMEWORK": FRAMEWORK,
-    "MODEL_CONFIG": MODEL_CONFIG,
-    "HYPER_PARAMETERS": HYPER_PARAMETERS,
-    "TRAINING_CONFIG": TRAINING_CONFIG,
-    "TRANSFORM": transform,
+    "state": model.state_dict(),
+    "config": config,
     "seen_classes": seen_classes
   }  # feature
   torch.save(features, SAVE_TO)

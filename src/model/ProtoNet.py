@@ -1,41 +1,45 @@
 import torch
 from torch import nn
-import torch.nn.functional as torch_f
+
+def stack(in_channels, out_channels, kernel_size):
+  return nn.Sequential(
+    nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, padding=1),
+    nn.GELU(),
+  )  # nn.Sequential
+# stack():
 
 class ProtoNet(nn.Module):
-  def __init__(self, in_channels=3, hidden_channel=26, output_channel=3):
+  def __init__(self, config):
     super(ProtoNet, self).__init__()
-    self.conv1 = nn.Conv2d(in_channels, hidden_channel, kernel_size=3, stride=1, padding=1)
-    self.conv2 = nn.Conv2d(hidden_channel, hidden_channel, kernel_size=3, stride=1, padding=1)
-    self.conv3 = nn.Conv2d(hidden_channel, output_channel, kernel_size=3, stride=1, padding=1)
-    self.swish = nn.SiLU()
+    self.config = config
     self.flatten = nn.Flatten()
-    self.softmax = nn.LogSoftmax(dim=1)
+    self.stacks = nn.Sequential(
+      stack(config["in_channels"], config["hidden_channels"], config["kernel_size"]),
+      #stack(config["hidden_channels"], config["hidden_channels"], config["kernel_size"]),
+      #stack(config["hidden_channels"], config["hidden_channels"], config["kernel_size"]),
+      stack(config["hidden_channels"], config["out_channels"], config["kernel_size"]),
+    )
   # __init__():
 
-  def prototyping(self, prototypes): self.prototypes = prototypes
+  def cdist(self, x, prototypes):
+    flatten_x = self.flatten(x).unsqueeze(1)
+    flatten_prototypes = prototypes.reshape(prototypes.shape[0], -1).unsqueeze(0)
+    distances = torch.norm(flatten_prototypes - flatten_x, p=2, dim=-1)
+    return distances
+  # cdist():
 
-  def cdist(self, x: torch.Tensor, metric="euclidean") -> torch.Tensor:
-    assert self.prototypes is not None, "Prototypes must be set before calling cdist."
-    assert x.size(1) == self.prototypes.size(1), "Feature dimensions must match."
-    if metric == "euclidean":
-      dists = torch.cdist(x, self.prototypes, p=2)  # L2 distance
-    elif metric == "cosine":
-      dists = 1 - torch_f.cosine_similarity(x.unsqueeze(1), self.prototypes.unsqueeze(0), dim=2)  # 1 - cosine similarity
-    else:
-      raise ValueError("Unsupported distance metric. Choose 'euclidean' or 'cosine'.")
-    return dists
-  # cdist()
-
-  def forward(self, x):
-    x = self.conv1(x)
-    x = self.swish(x)
-    x = self.conv2(x)
-    x = self.swish(x)
-    x = self.conv3(x)
-    x = self.swish(x)
-    x = self.flatten(x)
-    x = self.cdist(x, metric="euclidean")
-    return self.softmax(-x)
-  # forward
+  def forward(self, x, prototypes):
+    x = self.stacks(x)
+    return self.cdist(x, prototypes)
+  # forward():
 # ProtoNet
+
+def get_prototypes(support_set, seen_classes):
+  prototypes = []
+  embedded_features_list = [[] for _ in range(len(support_set.classes))]
+  for embedded_feature, label in support_set: embedded_features_list[seen_classes.index(label)].append(embedded_feature)
+  for embedded_features in embedded_features_list:
+    class_prototype = torch.stack(embedded_features).mean(dim=0)
+    prototypes.append(class_prototype)
+  return torch.stack(prototypes)
+# get_prototypes
