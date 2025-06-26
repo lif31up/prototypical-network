@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 import torchvision as tv
 
 from config import CONFIG
-from src.model.ProtoNet import ProtoNet
+from src.model.ProtoNet import ProtoNet, get_prototypes
 from src.FewShotEpisoder import FewShotEpisoder
 from tqdm import tqdm
 
@@ -32,13 +32,7 @@ def evaluate(MODEL: str, DATASET: str):
 
   # compute prototype from support examples
   support_set, query_set = episoder.get_episode()
-  prototypes = list()
-  embedded_features_list = [[] for _ in range(len(support_set.classes))]
-  for embedded_feature, label in support_set: embedded_features_list[unseen_classes.index(label)].append(embedded_feature)
-  for embedded_features in embedded_features_list:
-    class_prototype = torch.stack(embedded_features).mean(dim=0)
-    prototypes.append(class_prototype)
-  prototypes = torch.stack(prototypes).to(device, non_blocking=True)
+  prototypes = get_prototypes(support_set).to(device)
   # eval model
   total_loss, count, n_problem = 0., 0, len(query_set)
   for feature, label in DataLoader(query_set, shuffle=True, pin_memory=True, num_workers=4):
