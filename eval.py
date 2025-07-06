@@ -1,13 +1,11 @@
 import random
 import torch
-from torch import nn
 from torch.utils.data import DataLoader
 import torchvision as tv
 
-from config import CONFIG
-from src.model.ProtoNet import ProtoNet
-from src.FewShotEpisoder import FewShotEpisoder
-from tqdm import tqdm
+from model.ProtoNet import ProtoNet, get_prototypes
+from FewShotEpisoder import FewShotEpisoder
+
 
 def evaluate(MODEL: str, DATASET: str):
   transform = tv.transforms.Compose([
@@ -32,21 +30,14 @@ def evaluate(MODEL: str, DATASET: str):
 
   # compute prototype from support examples
   support_set, query_set = episoder.get_episode()
-  prototypes = list()
-  embedded_features_list = [[] for _ in range(len(support_set.classes))]
-  for embedded_feature, label in support_set: embedded_features_list[unseen_classes.index(label)].append(embedded_feature)
-  for embedded_features in embedded_features_list:
-    class_prototype = torch.stack(embedded_features).mean(dim=0)
-    prototypes.append(class_prototype)
-  prototypes = torch.stack(prototypes).to(device, non_blocking=True)
+  model.prototypes = get_prototypes(support_set).to(device)
   # eval model
   total_loss, count, n_problem = 0., 0, len(query_set)
   for feature, label in DataLoader(query_set, shuffle=True, pin_memory=True, num_workers=4):
     feature, label = feature.to(device, non_blocking=True), label.to(device, non_blocking=True)
-    pred = model.forward(feature, prototypes)
+    pred = model.forward(feature)
     if torch.argmax(pred) == torch.argmax(label): count += 1
   print(f"seen classes: {data['seen_classes']}\nunseen classes: {unseen_classes}\naccuracy: {count / n_problem:.4f}({count}/{n_problem})")
 # main()
 
-if __name__ == "__main__":
-  for _ in range(10): evaluate("../src/model/model.pth", "../data/omniglot-py/images_background/Futurama")
+if __name__ == "__main__": evaluate("../src/model/model.pth", "../data/omniglot-py/images_background/Futurama")
