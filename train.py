@@ -58,4 +58,4 @@ def train(DATASET, SAVE_TO, config=CONFIG):
   save_file(model.state_dict(), SAVE_TO.replace(".pth", ".safetensors"))
 # main()
 
-if __name__ == "__main__": train("../data/omniglot-py/images_background/Futurama", "./model/model.pth")
+if __name__ == "__main__": train("./data/omniglot-py/images_background/Futurama", "model.pth")
