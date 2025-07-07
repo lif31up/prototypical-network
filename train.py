@@ -9,6 +9,14 @@ from FewShotEpisoder import FewShotEpisoder
 from model.ProtoNet import ProtoNet, get_prototypes
 from safetensors.torch import save_file
 
+def init_weights(m):
+  if isinstance(m, nn.Linear):
+    nn.init.xavier_uniform_(m.weight)
+  try:
+    if m.bias is not None: nn.init.zeros_(m.bias)
+  except: None
+# init_weights()
+
 def train(DATASET, SAVE_TO, config=CONFIG):
   transform = tv.transforms.Compose([
     tv.transforms.Resize((224, 224)),
@@ -22,6 +30,7 @@ def train(DATASET, SAVE_TO, config=CONFIG):
 
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
   model = ProtoNet(config).to(device)
+  model.apply(init_weights)
   criterion, optim = nn.CrossEntropyLoss(), torch.optim.Adam(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
   scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lambda step: min((step + 1) ** -0.5, (step + 1) * 1e-3))
 
@@ -40,7 +49,7 @@ def train(DATASET, SAVE_TO, config=CONFIG):
         loss.backward()
         if config["clip_grad"]: nn.utils.clip_grad_norm(model.parameters(), max_norm=1.0)
         optim.step()
-        scheduler.step()
+        if config["scheduler"]: scheduler.step()
       # for DataLoader(query_set)
       epoch_losses += iter_loss / len(query_set)
     # for range(iters)
