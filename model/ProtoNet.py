@@ -15,10 +15,11 @@ class ProtoNet(nn.Module):
   def forward(self, x):
     assert self.prototypes is not None, "self.prototypes is None"
     x = self.conv1(x)
-    x = self.conv2(self.act(x))
-    x = self.conv3(self.act(x))
+    res = x
+    x = self.conv2(self.act(x) + res)
+    x = self.conv3(self.act(x) + res)
     x = self.cdist(x, self.prototypes)
-    return self.softmax(x)
+    return self.softmax(-x)
   # forward():
 
   def cdist(self, x, prototypes):
