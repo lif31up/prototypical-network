@@ -56,8 +56,8 @@ if __name__ == "__main__": evaluate("../src/model/model.pth", "../data/omniglot-
 
 ## Technical Highlights
 
-### Prototyping
-
+### Prototyping 
+It optimizes the embedding space to create distinct class prototypes. These prototypes are calculated using mean values and are resampled during each iteration.
 ```python
 def get_prototypes(support_set, seen_classes):
   prototypes = []
@@ -71,7 +71,7 @@ def get_prototypes(support_set, seen_classes):
 ```
 
 ### Euclidean Distance / Model Definition
-
+The model architecture doesn't use any pooling layers but instead employs residual connections. The use of residual connections in Few Shot Learning approaches like Prototypical Networks has been proven to stabilize the learning process.
 ```python
 class ProtoNet(nn.Module):
   def __init__(self, config):
@@ -87,10 +87,11 @@ class ProtoNet(nn.Module):
   def forward(self, x):
     assert self.prototypes is not None, "self.prototypes is None"
     x = self.conv1(x)
-    x = self.conv2(self.act(x))
-    x = self.conv3(self.act(x))
+    res = x
+    x = self.conv2(self.act(x) + res)
+    x = self.conv3(self.act(x) + res)
     x = self.cdist(x, self.prototypes)
-    return self.softmax(x)
+    return self.softmax(-x)
   # forward():
 
   def cdist(self, x, prototypes):
@@ -101,6 +102,7 @@ class ProtoNet(nn.Module):
 ```
 
 ### Training
+I must say the training code is very well structured. It consists of meta-learning and basic learning stages. In the meta-learning stage, it calculates the prototypes, while in the basic learning stage, it learns toward these prototypes.
 ```python
 def train(DATASET, SAVE_TO, config=CONFIG):
   transform = tv.transforms.Compose([
