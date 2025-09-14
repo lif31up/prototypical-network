@@ -1,31 +1,70 @@
 import torch
 from torch import nn
 
-class ProtoNet(nn.Module):
-  def __init__(self, config):
-    super(ProtoNet, self).__init__()
-    self.config, self.prototypes = config, None
-    self.flatten, self.act, self.softmax = nn.Flatten(1), nn.SiLU(), nn.Softmax(dim=1)
+from config import Config
 
-    self.conv1 = nn.Conv2d(in_channels=config["in_channels"], out_channels=config["hidden_channels"], kernel_size=config["kernel_size"], stride=1, padding=1)
-    self.conv2 = nn.Conv2d(in_channels=config["hidden_channels"], out_channels=config["hidden_channels"], kernel_size=config["kernel_size"], stride=1, padding=1)
-    self.conv3 = nn.Conv2d(in_channels=config["hidden_channels"], out_channels=config["out_channels"], kernel_size=config["kernel_size"], stride=1, padding=1)
-  # __init__():
+
+class ProtoNet(nn.Module):
+  def __init__(self, config:Config):
+    super(ProtoNet, self).__init__()
+    self.config = config
+    self.convs = self._create_convs(self.config.n_convs)
+    self.act = nn.SiLU()
+    self.flat = nn.Flatten()
+    self.prototypes = None
+  # __init__
+
+  def _create_convs(self, n_convs):
+    layers = nn.ModuleList()
+    layers.append(
+      nn.Conv2d(
+        in_channels=self.config.input_channels,
+        out_channels=self.config.hidden_channels,
+        kernel_size=self.config.kernel_size,
+        stride=self.config.stride,
+        padding=self.config.padding)
+    )  # first conv
+    for i in range(n_convs - 2):
+      layers.append(
+        nn.Conv2d(
+          in_channels=self.config.hidden_channels,
+          out_channels=self.config.hidden_channels,
+          kernel_size=self.config.kernel_size,
+          padding=self.config.padding,
+          stride=self.config.stride,
+          bias=self.config.bias),
+      )  # hidden convs
+    layers.append(
+      nn.Conv2d(
+        in_channels=self.config.hidden_channels,
+        out_channels=self.config.output_channels,
+        kernel_size=self.config.kernel_size,
+        stride=self.config.stride,
+        padding=self.config.padding)
+    )  # last conv
+    return layers
+  # _create_convs
+
+  def get_prototypes(self, support_set): self.prototypes = get_prototypes(support_set)
 
   def forward(self, x):
     assert self.prototypes is not None, "self.prototypes is None"
-    x = self.conv1(x)
-    res = x
-    x = self.conv2(self.act(x) + res)
-    x = self.conv3(self.act(x) + res)
+    x = self.convs[0](x)
+    x = self.act(x)
+    for conv in self.convs[1:-1]:
+      res = x
+      x = conv(x)
+      x = self.act(x)
+      x += res
+    x = self.convs[-1](x)
     x = self.cdist(x, self.prototypes)
-    return self.softmax(-x)
-  # forward():
+    return torch.negative(x)
+  # forward
 
   def cdist(self, x, prototypes):
-    flatten_x = self.flatten(x)
+    flatten_x = self.flat(x)
     return torch.cdist(flatten_x, prototypes, p=2)
-  # cdist():
+  # cdist
 # ProtoNet
 
 def get_prototypes(support_set):

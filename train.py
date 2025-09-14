@@ -1,70 +1,59 @@
 import random
 import torch.cuda
-import torchvision as tv
 from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
-from config import CONFIG
+from config import Config
 from FewShotEpisoder import FewShotEpisoder
-from model.ProtoNet import ProtoNet, get_prototypes
-from safetensors.torch import save_file
+from model.ProtoNet import ProtoNet
 
 def init_weights(m):
   if isinstance(m, nn.Linear):
     nn.init.xavier_uniform_(m.weight)
   try:
     if m.bias is not None: nn.init.zeros_(m.bias)
-  except: None
-# init_weights()
+  except: pass
+# init_weights
 
-def train(DATASET, SAVE_TO, config=CONFIG):
-  transform = tv.transforms.Compose([
-    tv.transforms.Resize((224, 224)),
-    tv.transforms.ToTensor(),
-    tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-  ]) # transform
+def train(model, path, config:Config, episoder:FewShotEpisoder, device, init=True):
+  model.to(device)
+  if init: model.apply(init_weights)
+  optim = torch.optim.Adam(model.parameters(), lr=config.alpha, eps=config.eps)
+  criterion = nn.CrossEntropyLoss()
 
-  imageset = tv.datasets.ImageFolder(root=DATASET)
-  seen_classes = [_ for _ in random.sample(list(imageset.class_to_idx.values()), config['n_way'])]
-  episoder = FewShotEpisoder(imageset, seen_classes, config['k_shot'], config['n_query'], transform)
-
-  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  model = ProtoNet(config).to(device)
-  model.apply(init_weights)
-  criterion, optim = nn.CrossEntropyLoss(), torch.optim.Adam(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
-  scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lambda step: min((step + 1) ** -0.5, (step + 1) * 1e-3))
-
-  progress_bar, whole_loss = tqdm(range(CONFIG["epochs"])), float(0)
-  for _ in progress_bar:
+  progression = tqdm(range(config.epochs))
+  for _ in progression:
+    epoch_loss = float(0)
     support_set, query_set = episoder.get_episode()
-    model.prototypes, epoch_losses = get_prototypes(support_set).to(device), float(0)
-    for _ in range(CONFIG["iters"]):
+    model.get_prototypes(support_set)
+    for _ in range(config.iterations):
       iter_loss = float(0)
-      for feature, label in DataLoader(query_set, batch_size=CONFIG["batch_size"], shuffle=True, pin_memory=True, num_workers=4):
+      for feature, label in DataLoader(query_set, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=4):
         feature, label = feature.to(device, non_blocking=True), label.to(device, non_blocking=True)
         pred = model.forward(feature)
         loss = criterion(pred, label)
-        iter_loss += loss.item()
         optim.zero_grad()
         loss.backward()
-        if config["clip_grad"]: nn.utils.clip_grad_norm(model.parameters(), max_norm=1.0)
+        if config.clip_grad: nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optim.step()
-        if config["scheduler"]: scheduler.step()
-      # for DataLoader(query_set)
-      epoch_losses += iter_loss / len(query_set)
-    # for range(iters)
-    epoch_losses = epoch_losses / CONFIG["iters"]
-    progress_bar.set_postfix(loss=epoch_losses)
-  # for progress_bar
+        iter_loss += loss.item()
+      epoch_loss += iter_loss
+    epoch_loss /= config.epochs
+    progression.set_postfix(loss=epoch_loss)
 
-  # saving model
   features = {
     "state": model.state_dict(),
     "config": config,
-    "seen_classes": seen_classes
-  }  # feature
-  torch.save(features, SAVE_TO)
-  save_file(model.state_dict(), SAVE_TO.replace(".pth", ".safetensors"))
-# main()
+  } # features
+  torch.save(features, f'{path}.bin')
+# main
 
-if __name__ == "__main__": train("./data/omniglot-py/images_background/Futurama", "model.pth")
+if __name__ == "__main__":
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  protonet_config = Config()
+  imageset = protonet_config.imageset
+  seen_classes = [_ for _ in random.sample(list(imageset.class_to_idx.values()), protonet_config.n_way)]
+  episoder = FewShotEpisoder(imageset, seen_classes, protonet_config.k_shot, protonet_config.n_query, protonet_config.transform)
+  model = ProtoNet(protonet_config)
+  train(model=model, path=protonet_config.save_to, config=protonet_config, episoder=episoder, device=device, init=True)
+# if __name__ = "__main__"
