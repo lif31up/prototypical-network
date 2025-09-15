@@ -20,38 +20,55 @@ Few-shot learning aims to enable models to generalize to new classes with only a
 `confing.py` contains the configuration settings for the model, including the framework, dimensions, learning rate, and other hyperparameters
 
 ```python
-CONFIG = {
-  "version": "1.0.1",
-  # framework
-  "n_way": 5,
-  "k_shot": 1,
-  "n_query": 2,
-  # model
-  "inpt_dim": 3,
-  "hidn_dim": 6,
-  "oupt_dim": 5,
-  # hp
-  "iters": 5,
-  "epochs": 10,
-  "batch_size": 8,
-  "inner_batch_size": 5,
-  "alpha": 1e-2,
-  "beta": 1e-4,
-} # CONFIG
+class Config:
+  def __init__(self):
+    self.input_channels, self.hidden_channels, self.output_channels = 1, 32, 1
+    self.n_convs = 4
+    self.kernel_size, self.padding, self.stride, self.bias = 3, 1, 1, True
+    self.iterations, self.alpha = 100, 1e-3
+    self.eps = 1e-5
+    self.epochs, self.beta = 30, 1e-4
+    self.batch_size = 8
+    self.n_way, self.k_shot, self.n_query = 5, 5, 5
+    self.save_to = "./models"
+    self.transform = transform
+    self.imageset = get_imageset()
+    self.dummy = torch.zeros(1, self.input_channels, 28, 28)
+    self.clip_grad = True
 ```
 
 ### Training
 `train.py` is a script to train the model on the omniglot dataset. It includes the training loop, evaluation, and saving the model checkpoints.
 
 ```python
-if __name__ == "__main__": train("../data/omniglot-py/images_background/Futurama", "./model/model.pth")
+if __name__ == "__main__":
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  protonet_config = Config()
+  imageset = protonet_config.imageset
+  seen_classes = [_ for _ in random.sample(list(imageset.class_to_idx.values()), protonet_config.n_way)]
+  episoder = FewShotEpisoder(imageset, seen_classes, protonet_config.k_shot, protonet_config.n_query, protonet_config.transform)
+  model = ProtoNet(protonet_config)
+  train(model=model, path=protonet_config.save_to, config=protonet_config, episoder=episoder, device=device, init=True)
 ```
 
 ### Evaluation
 `eval.py` is used to evaluate the trained model on the omniglot dataset. It loads the model and tokenizer, processes the dataset, and computes the accuracy of the model.
 
 ```python
-if __name__ == "__main__": evaluate("../src/model/model.pth", "../data/omniglot-py/images_background/Futurama")
+if __name__ == "__main__":
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  protonet_config = Config()
+  my_data = torch.load(
+    f='/content/drive/MyDrive/Colab Notebooks/PRN.bin',
+    weights_only=False,
+    map_location=torch.device('cpu'))
+  my_model = ProtoNet(my_data["config"]).to(device)
+  my_model.load_state_dict(my_data["state"])
+  imageset = protonet_config.imageset
+  unseen_classes = [_ for _ in random.sample(list(imageset.class_to_idx.values()), protonet_config.n_way)]
+  evisoder = FewShotEpisoder(imageset, unseen_classes, protonet_config.k_shot, protonet_config.n_query,
+                             protonet_config.transform)
+  evaluate(my_model, my_data, device)
 ```
 
 ## Technical Highlights
@@ -59,98 +76,72 @@ if __name__ == "__main__": evaluate("../src/model/model.pth", "../data/omniglot-
 ### Prototyping 
 It optimizes the embedding space to create distinct class prototypes. These prototypes are calculated using mean values and are resampled during each iteration.
 ```python
-def get_prototypes(support_set, seen_classes):
-  prototypes = []
+def get_prototypes(support_set):
+  prototypes = list()
   embedded_features_list = [[] for _ in range(len(support_set.classes))]
-  for embedded_feature, label in support_set: embedded_features_list[seen_classes.index(label)].append(embedded_feature)
+  for embedded_feature, label in support_set:
+    idx = support_set.classes.index(label)
+    embedded_features_list[idx].append(embedded_feature)
   for embedded_features in embedded_features_list:
     class_prototype = torch.stack(embedded_features).mean(dim=0)
-    prototypes.append(class_prototype)
-  return torch.stack(prototypes)
-# get_prototypes
+    prototypes.append(class_prototype.flatten())
+  prototypes = torch.stack(prototypes)
+  return prototypes
 ```
 
 ### Euclidean Distance / Model Definition
 The model architecture doesn't use any pooling layers but instead employs residual connections. The use of residual connections in Few Shot Learning approaches like Prototypical Networks has been proven to stabilize the learning process.
 ```python
 class ProtoNet(nn.Module):
-  def __init__(self, config):
-    super(ProtoNet, self).__init__()
-    self.config, self.prototypes = config, None
-    self.flatten, self.act, self.softmax = nn.Flatten(1), nn.SiLU(), nn.Softmax(dim=1)
-
-    self.conv1 = nn.Conv2d(in_channels=config["in_channels"], out_channels=config["hidden_channels"], kernel_size=config["kernel_size"], stride=1, padding=1)
-    self.conv2 = nn.Conv2d(in_channels=config["hidden_channels"], out_channels=config["hidden_channels"], kernel_size=config["kernel_size"], stride=1, padding=1)
-    self.conv3 = nn.Conv2d(in_channels=config["hidden_channels"], out_channels=config["out_channels"], kernel_size=config["kernel_size"], stride=1, padding=1)
-  # __init__():
-
   def forward(self, x):
     assert self.prototypes is not None, "self.prototypes is None"
-    x = self.conv1(x)
-    res = x
-    x = self.conv2(self.act(x) + res)
-    x = self.conv3(self.act(x) + res)
+    x = self.convs[0](x)
+    x = self.act(x)
+    for conv in self.convs[1:-1]:
+      res = x
+      x = conv(x)
+      x = self.act(x)
+      x += res
+    x = self.convs[-1](x)
     x = self.cdist(x, self.prototypes)
-    return self.softmax(-x)
-  # forward():
+    return torch.negative(x)
 
   def cdist(self, x, prototypes):
-    flatten_x = self.flatten(x)
+    flatten_x = self.flat(x)
     return torch.cdist(flatten_x, prototypes, p=2)
-  # cdist():
-# ProtoNet
 ```
 
 ### Training
 I must say the training code is very well structured. It consists of meta-learning and basic learning stages. In the meta-learning stage, it calculates the prototypes, while in the basic learning stage, it learns toward these prototypes.
 ```python
-def train(DATASET, SAVE_TO, config=CONFIG):
-  transform = tv.transforms.Compose([
-    tv.transforms.Resize((224, 224)),
-    tv.transforms.ToTensor(),
-    tv.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-  ]) # transform
+def train(model, path, config:Config, episoder:FewShotEpisoder, device, init=True):
+  model.to(device)
+  if init: model.apply(init_weights)
+  optim = torch.optim.Adam(model.parameters(), lr=config.alpha, eps=config.eps)
+  criterion = nn.CrossEntropyLoss(reduction="sum")
 
-  imageset = tv.datasets.ImageFolder(root=DATASET)
-  seen_classes = [_ for _ in random.sample(list(imageset.class_to_idx.values()), config['n_way'])]
-  episoder = FewShotEpisoder(imageset, seen_classes, config['k_shot'], config['n_query'], transform)
-
-  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  model = ProtoNet(config).to(device)
-  optim = torch.optim.Adam(model.parameters(), lr=config["lr"], weight_decay=config["weight_decay"])
-  criterion = nn.CrossEntropyLoss()
-  scheduler = torch.optim.lr_scheduler.LambdaLR(optim, lr_lambda=lambda step: min((step + 1) ** -0.5, (step + 1) * 1e-3))
-
-  progress_bar, whole_loss = tqdm(range(config['epochs'])), float()
-  for _ in progress_bar:
+  progression = tqdm(range(config.epochs))
+  for _ in progression:
+    epoch_loss = float(0)
     support_set, query_set = episoder.get_episode()
-    # STAGE1: compute prototype from support examples
-    prototypes = get_prototypes(support_set, seen_classes)
-    # STAGE2: update parameters form loss associated with prototypes
-    epoch_loss = list()
-    for _ in range(config['iters']):
-      iter_loss, vuffer = list(), 0
-      for feature, label in DataLoader(query_set, batch_size=config['batch_size'], shuffle=True):
-        pred = model.forward(feature, prototypes)
+    model.get_prototypes(support_set)
+    for _ in range(config.iterations):
+      iter_loss = float(0)
+      for feature, label in DataLoader(query_set, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=4):
+        feature, label = feature.to(device, non_blocking=True), label.to(device, non_blocking=True)
+        pred = model.forward(feature)
         loss = criterion(pred, label)
         optim.zero_grad()
         loss.backward()
+        if config.clip_grad: nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optim.step()
-        scheduler.step()
-        iter_loss.append(loss.item())
-      vuffer = sum(iter_loss) / len(iter_loss)
-      progress_bar.set_postfix(iter_loss=vuffer)
-      epoch_loss.append(vuffer)
-    progress_bar.set_postfix(loss=sum(epoch_loss) / len(epoch_loss))
-  # for for for
+        iter_loss += loss.item()
+      iter_loss /= len(query_set)
+      progression.set_postfix(iter_loss=iter_loss)
 
-  # saving model
   features = {
     "state": model.state_dict(),
     "config": config,
-    "seen_classes": seen_classes
-  }  # feature
-  torch.save(features, SAVE_TO)
-  save_file(model.state_dict(), SAVE_TO.replace(".pth", ".safetensors"))
-# main()
+  } # features
+  torch.save(features, f'{path}.bin')
 ```
