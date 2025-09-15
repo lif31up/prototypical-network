@@ -1,8 +1,6 @@
 import torch
 from torch import nn
-
 from config import Config
-
 
 class ProtoNet(nn.Module):
   def __init__(self, config:Config):

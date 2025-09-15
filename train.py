@@ -21,7 +21,7 @@ def train(model, path, config:Config, episoder:FewShotEpisoder, device, init=Tru
   optim = torch.optim.Adam(model.parameters(), lr=config.alpha, eps=config.eps)
   criterion = nn.CrossEntropyLoss()
 
-  progression = tqdm(range(config.epochs))
+  progression = tqdm(range(config.epochs), desc='TRAIN')
   for _ in progression:
     epoch_loss = float(0)
     support_set, query_set = episoder.get_episode()
