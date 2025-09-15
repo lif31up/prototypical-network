@@ -4,9 +4,9 @@ This implementation is inspired by [**"Prototypical Networks for Few-Shot Learni
 * **Quickstart on Colab:** [Colab](https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing)
 * **Hugging Face:** [Hugging Face](https://huggingface.co/lif31up/prototypical-network)
 
-|            | 5 Way ACC (5 shot) | 5 Way ACC(1 shot) |
-|------------|--------------------|------------------|
-|**Omniglot**|`100%` **(100/100)**|`96%` **(96/100)**|
+|                     | 5 Way ACC (5 shot) |
+|---------------------|-----------------|
+| `omniglot futurmaa` | `83% (833/1000)` |
 
 ## Prototypical Network for Few-Shot Image Classification
 This repository implements a Prototypical Network for few-shot image classification tasks using PyTorch. Prototypical Networks are designed to tackle the challenge of classifying new classes with limited examples by learning a metric space where classification is performed based on distances to prototype representations of each class.
