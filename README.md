@@ -9,7 +9,7 @@ This implementation is inspired by [**"Prototypical Networks for Few-Shot Learni
 | 5w5s ACC            | 3conv ProtoNet   | ResNet ProtoNet |
 |---------------------|------------------|-----------------|
 | `omniglot futurmaa` | `83% (833/1000)` | `83% (833/100)` |
-
+---
 ## Prototypical Network for Few-Shot Image Classification
 This repository implements a Prototypical Network for few-shot image classification tasks using PyTorch. Prototypical Networks are designed to tackle the challenge of classifying new classes with limited examples by learning a metric space where classification is performed based on distances to prototype representations of each class.
 
