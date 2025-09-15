@@ -4,6 +4,8 @@ This implementation is inspired by [**"Prototypical Networks for Few-Shot Learni
 * **Quickstart on Colab:** [Colab](https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing)
 * **Hugging Face:** [Hugging Face](https://huggingface.co/lif31up/prototypical-network)
 
+**Results:**
+
 |                     | 5w5s ACC         |
 |---------------------|------------------|
 | `omniglot futurmaa` | `83% (833/1000)` |
