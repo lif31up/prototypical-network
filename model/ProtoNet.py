@@ -43,7 +43,10 @@ class ProtoNet(nn.Module):
     return layers
   # _create_convs
 
-  def get_prototypes(self, support_set): self.prototypes = get_prototypes(support_set)
+  def get_prototypes(self, support_set):
+    self.prototypes = get_prototypes(support_set)
+    return self.prototypes
+  # get_prototypes
 
   def forward(self, x):
     assert self.prototypes is not None, "self.prototypes is None"
@@ -55,8 +58,7 @@ class ProtoNet(nn.Module):
       x = self.act(x)
       x += res
     x = self.convs[-1](x)
-    x = self.cdist(x, self.prototypes)
-    return torch.negative(x)
+    return self.cdist(x, self.prototypes)
   # forward
 
   def cdist(self, x, prototypes):
@@ -77,3 +79,21 @@ def get_prototypes(support_set):
   prototypes = torch.stack(prototypes)
   return prototypes
 # get_prototypes
+
+class PRNLoss(nn.Module):
+  def __init__(self, config:Config, reduction='mean'):
+    super(PRNLoss, self).__init__()
+    self.config = config
+    self.reduction = reduction
+    self.prototypes = None
+  # __init__
+
+  def set_prototypes(self, prototypes): self.prototypes = prototypes
+
+  def forward(self, pred_y, act_y):
+    assert self.prototypes is not None, "self.prototypes is None"
+    nom = torch.exp(-1 * pred_y[0][torch.argmax(act_y, dim=1)])
+    denom = torch.sum(torch.exp(torch.negative(pred_y)), dim=1, keepdim=True)
+    return torch.div(nom, denom).mean()
+  # forward
+# PRNLoss

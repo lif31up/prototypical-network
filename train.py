@@ -5,7 +5,8 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 from config import Config
 from FewShotEpisoder import FewShotEpisoder
-from model.ProtoNet import ProtoNet
+from model.ProtoNet import ProtoNet, PRNLoss
+
 
 def init_weights(m):
   if isinstance(m, nn.Linear):
@@ -19,13 +20,13 @@ def train(model, path, config:Config, episoder:FewShotEpisoder, device, init=Tru
   model.to(device)
   if init: model.apply(init_weights)
   optim = torch.optim.Adam(model.parameters(), lr=config.alpha, eps=config.eps)
-  criterion = nn.CrossEntropyLoss()
+  criterion = PRNLoss(config=config, reduction='mean')
 
   progression = tqdm(range(config.epochs), desc='TRAIN')
   for _ in progression:
     epoch_loss = float(0)
     support_set, query_set = episoder.get_episode()
-    model.get_prototypes(support_set)
+    criterion.set_prototypes(model.get_prototypes(support_set))
     for _ in range(config.iterations):
       iter_loss = float(0)
       for feature, label in DataLoader(query_set, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=4):

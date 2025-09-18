@@ -112,6 +112,24 @@ class ProtoNet(nn.Module):
     flatten_x = self.flat(x)
     return torch.cdist(flatten_x, prototypes, p=2)
 ```
+### PRNLoss
+The model predicts label while `PRNLoss` optimizes based on prototypes' distances.
+```python
+class PRNLoss(nn.Module):
+  def __init__(self, config:Config, reduction='mean'):
+    super(PRNLoss, self).__init__()
+    self.config = config
+    self.reduction = reduction
+    self.prototypes = None
+
+  def set_prototypes(self, prototypes): self.prototypes = prototypes
+
+  def forward(self, pred_y, act_y):
+    assert self.prototypes is not None, "self.prototypes is None"
+    nom = torch.exp(-1 * pred_y[0][torch.argmax(act_y, dim=1)])
+    denom = torch.sum(torch.exp(torch.negative(pred_y)), dim=1, keepdim=True)
+    return torch.div(nom, denom).mean()
+```
 
 ### Training
 I must say the training code is very well structured. It consists of meta-learning and basic learning stages. In the meta-learning stage, it calculates the prototypes, while in the basic learning stage, it learns toward these prototypes.
