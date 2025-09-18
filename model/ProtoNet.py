@@ -94,6 +94,7 @@ class PRNLoss(nn.Module):
     assert self.prototypes is not None, "self.prototypes is None"
     nom = torch.exp(-1 * pred_y[0][torch.argmax(act_y, dim=1)])
     denom = torch.sum(torch.exp(torch.negative(pred_y)), dim=1, keepdim=True)
-    return torch.div(nom, denom).mean()
+    loss = torch.div(nom, denom)
+    return loss.mean() if self.reduction == "mean" else loss.sum() if self.reduction == "sum"
   # forward
 # PRNLoss
