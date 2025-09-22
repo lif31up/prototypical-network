@@ -5,7 +5,7 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 from config import Config
 from FewShotEpisoder import FewShotEpisoder
-from model.ProtoNet import ProtoNet, PRNLoss
+from model.ProtoNet import ProtoNet, PRNLoss, get_prototypes
 
 
 def init_weights(m):
@@ -19,28 +19,28 @@ def init_weights(m):
 def train(model, path, config:Config, episoder:FewShotEpisoder, device, init=True):
   model.to(device)
   if init: model.apply(init_weights)
-  optim = torch.optim.Adam(model.parameters(), lr=config.alpha, eps=config.eps)
-  criterion = PRNLoss(config=config, reduction='mean')
+  optim = torch.optim.SGD(model.parameters(), lr=config.alpha)
+  criterion = nn.CrossEntropyLoss()
 
-  progression = tqdm(range(config.epochs), desc='TRAIN')
+  progression = tqdm(range(config.epochs))
   for _ in progression:
-    epoch_loss = float(0)
     support_set, query_set = episoder.get_episode()
-    criterion.set_prototypes(model.get_prototypes(support_set))
+    prototypes = get_prototypes(support_set)
     for _ in range(config.iterations):
       iter_loss = float(0)
       for feature, label in DataLoader(query_set, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=4):
         feature, label = feature.to(device, non_blocking=True), label.to(device, non_blocking=True)
-        pred = model.forward(feature)
+        pred = model.forward(feature, prototypes)
         loss = criterion(pred, label)
         optim.zero_grad()
         loss.backward()
         if config.clip_grad: nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optim.step()
         iter_loss += loss.item()
-      epoch_loss += iter_loss
-    epoch_loss /= config.epochs
-    progression.set_postfix(loss=epoch_loss)
+      iter_loss /= len(query_set)
+      progression.set_postfix(iter_loss=iter_loss)
+    del prototypes, feature, label, pred, loss
+    torch.cuda.empty_cache()
 
   features = {
     "state": model.state_dict(),
