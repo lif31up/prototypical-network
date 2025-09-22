@@ -16,7 +16,7 @@ class Config:
     self.imageset = get_imageset()
     self.dummy = torch.zeros(1, self.input_channels, 28, 28)
     self.clip_grad = True
-  # __init__():
+  # __init__:
 # MAMLConfig
 
 transform = tv.transforms.Compose([
