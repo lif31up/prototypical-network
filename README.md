@@ -92,11 +92,10 @@ def get_prototypes(support_set):
 ```
 
 ### Euclidean Distance / Model Definition
-The model architecture doesn't use any pooling layers but instead employs residual connections. The use of residual connections in Few Shot Learning approaches like Prototypical Networks has been proven to stabilize the learning process.
+The model architecture doesn't use any pooling layers but residual connections. The use of residual connections in FSL approaches like Prototypical Networks has been proven to stabilize the learning process. `forward` outputs softmax vectors of negative distance to the prototypes which is optimized by SGD.
 ```python
 class ProtoNet(nn.Module):
-  def forward(self, x):
-    assert self.prototypes is not None, "self.prototypes is None"
+  def forward(self, x, prototypes):
     x = self.convs[0](x)
     x = self.act(x)
     for conv in self.convs[1:-1]:
@@ -105,30 +104,9 @@ class ProtoNet(nn.Module):
       x = self.act(x)
       x += res
     x = self.convs[-1](x)
-    x = self.cdist(x, self.prototypes)
-    return torch.negative(x)
-
-  def cdist(self, x, prototypes):
-    flatten_x = self.flat(x)
-    return torch.cdist(flatten_x, prototypes, p=2)
-```
-### PRNLoss
-The model predicts label while `PRNLoss` optimizes based on prototypes' distances.
-```python
-class PRNLoss(nn.Module):
-  def __init__(self, config:Config, reduction='mean'):
-    super(PRNLoss, self).__init__()
-    self.config = config
-    self.reduction = reduction
-    self.prototypes = None
-
-  def set_prototypes(self, prototypes): self.prototypes = prototypes
-
-  def forward(self, pred_y, act_y):
-    assert self.prototypes is not None, "self.prototypes is None"
-    nom = torch.exp(-1 * pred_y[0][torch.argmax(act_y, dim=1)])
-    denom = torch.sum(torch.exp(torch.negative(pred_y)), dim=1, keepdim=True)
-    return torch.div(nom, denom).mean()
+    x = self.flat(x)
+    x = torch.cdist(x, prototypes, p=2)
+    return self.softmax(-1 * x)
 ```
 
 ### Training
@@ -137,19 +115,18 @@ I must say the training code is very well structured. It consists of meta-learni
 def train(model, path, config:Config, episoder:FewShotEpisoder, device, init=True):
   model.to(device)
   if init: model.apply(init_weights)
-  optim = torch.optim.Adam(model.parameters(), lr=config.alpha, eps=config.eps)
-  criterion = nn.CrossEntropyLoss(reduction="sum")
+  optim = torch.optim.SGD(model.parameters(), lr=config.alpha)
+  criterion = nn.CrossEntropyLoss()
 
   progression = tqdm(range(config.epochs))
   for _ in progression:
-    epoch_loss = float(0)
     support_set, query_set = episoder.get_episode()
-    model.get_prototypes(support_set)
+    prototypes = get_prototypes(support_set)
     for _ in range(config.iterations):
       iter_loss = float(0)
       for feature, label in DataLoader(query_set, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=4):
         feature, label = feature.to(device, non_blocking=True), label.to(device, non_blocking=True)
-        pred = model.forward(feature)
+        pred = model.forward(feature, prototypes)
         loss = criterion(pred, label)
         optim.zero_grad()
         loss.backward()
@@ -158,6 +135,8 @@ def train(model, path, config:Config, episoder:FewShotEpisoder, device, init=Tru
         iter_loss += loss.item()
       iter_loss /= len(query_set)
       progression.set_postfix(iter_loss=iter_loss)
+    del prototypes, feature, label, pred, loss
+    torch.cuda.empty_cache()
 
   features = {
     "state": model.state_dict(),
