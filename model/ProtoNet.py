@@ -53,8 +53,7 @@ class ProtoNet(nn.Module):
       x += res
     x = self.convs[-1](x)
     x = self.flat(x)
-    x = torch.cdist(x, prototypes, p=2)
-    return self.softmax(-1 * x)
+    return -1 * torch.cdist(x, prototypes, p=2)
   # forward
 # ProtoNet
 

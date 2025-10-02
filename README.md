@@ -54,7 +54,7 @@ if __name__ == "__main__":
 ```
 
 ### Evaluation
-`eval.py` is used to evaluate the trained model on the omniglot dataset. It loads the model and tokenizer, processes the dataset, and computes the accuracy of the model.
+`evaluate.py` is used to evaluate the trained model on the omniglot dataset. It loads the model and tokenizer, processes the dataset, and computes the accuracy of the model.
 
 ```python
 if __name__ == "__main__":
@@ -76,7 +76,8 @@ if __name__ == "__main__":
 ## Technical Highlights
 
 ### Prototyping 
-It optimizes the embedding space to create distinct class prototypes. These prototypes are calculated using mean values and are resampled during each iteration.
+It optimizes the embedding space to create distinct class prototypes. These prototypes are calculated using mean of the sample value and processed during each epochs.
+
 ```python
 def get_prototypes(support_set):
   prototypes = list()
@@ -91,8 +92,9 @@ def get_prototypes(support_set):
   return prototypes
 ```
 
-### Euclidean Distance / Model Definition
-The model architecture doesn't use any pooling layers but residual connections. The use of residual connections in FSL approaches like Prototypical Networks has been proven to stabilize the learning process. `forward` outputs softmax vectors of negative distance to the prototypes which is optimized by SGD.
+### Euclidean Distance and Forward
+The model outputs a hot vector having euclidean distances through each prototypes—they are represented as negative softmax ratio (following the original paper), which is operated by `torch.CrossEntrpyLoss`'s interal logic. It is worthy mentioned that it employees simple skip connection (residual connection).
+
 ```python
 class ProtoNet(nn.Module):
   def forward(self, x, prototypes):
@@ -105,12 +107,12 @@ class ProtoNet(nn.Module):
       x += res
     x = self.convs[-1](x)
     x = self.flat(x)
-    x = torch.cdist(x, prototypes, p=2)
-    return self.softmax(-1 * x)
+    return -1 * torch.cdist(x, prototypes, p=2)
 ```
 
 ### Training
-I must say the training code is very well structured. It consists of meta-learning and basic learning stages. In the meta-learning stage, it calculates the prototypes, while in the basic learning stage, it learns toward these prototypes.
+After sampling its optimization object, the model gets updated by them (For a epoch, it resamples the prototypes from new support set.). 
+
 ```python
 def train(model, path, config:Config, episoder:FewShotEpisoder, device, init=True):
   model.to(device)
