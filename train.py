@@ -5,7 +5,7 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 from config import Config
 from FewShotEpisoder import FewShotEpisoder
-from model.ProtoNet import ProtoNet, PRNLoss, get_prototypes
+from model.ProtoNet import ProtoNet, get_prototypes
 
 
 def init_weights(m):

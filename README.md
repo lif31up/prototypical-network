@@ -93,7 +93,7 @@ def get_prototypes(support_set):
 ```
 
 ### Euclidean Distance and Forward
-The model outputs a hot vector having euclidean distances through each prototypes—they are represented as negative softmax ratio (following the original paper), which is operated by `torch.CrossEntrpyLoss`'s interal logic. It is worthy mentioned that it employees simple skip connection (residual connection).
+The model outputs a hot vector having euclidean distances through each prototypes. they are represented as negative softmax ratio (following the original paper). It is worthy mentioned that it employees simple skip connection (residual connection).
 
 ```python
 class ProtoNet(nn.Module):
