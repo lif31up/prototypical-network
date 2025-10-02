@@ -13,7 +13,6 @@ def evaluate(model, evisoder, device, logging=True):
   for feature, label in DataLoader(query_set, shuffle=True, pin_memory=True, num_workers=4):
     feature, label = feature.to(device, non_blocking=True), label.to(device, non_blocking=True)
     pred = model.forward(feature)
-    pred = torch.softmax(pred, dim=1)
     if torch.argmax(pred) == torch.argmax(label): n_counts += 1
   if logging: print(f"unseen classes: {evisoder.classes}\naccuracy: {n_counts / n_problems:.4f}({n_counts}/{n_problems})")
   return n_counts, n_problems
