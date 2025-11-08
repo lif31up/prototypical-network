@@ -1,22 +1,16 @@
-This implementation is inspired by [**"Prototypical Networks for Few-Shot Learning"**](https://arxiv.org/abs/1703.05175) (2017) by Jake Snell, Kevin Swersky, Richard S. Zemel.
+# Prototypical Network for Few-Shot Image Classification
+This implementation is inspired by [Prototypical Networks for Few-Shot Learning (2017)](https://arxiv.org/abs/1703.05175) by Jake Snell, Kevin Swersky, Richard S. Zemel.
 
-* **Note & References:** [GitBook](https://lif31up.gitbook.io/lif31up/few-shot-learning/prototypical-networks-for-few-shot-learning)
-* ⭐ **Quickstart on Colab:** [Colab](https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing)
-* **Hugging Face:** [Hugging Face](https://huggingface.co/lif31up/prototypical-network)
-
-**Results:**
-
-| 5w5s ACC            | Prototypical ResNet(4conv) |
-|---------------------|----------------------------|
-| `omniglot futurmaa` | `83% (833/1000)`           |
----
-## Prototypical Network for Few-Shot Image Classification
-This repository implements a Prototypical Network for few-shot image classification tasks using PyTorch. Prototypical Networks are designed to tackle the challenge of classifying new classes with limited examples by learning a metric space where classification is performed based on distances to prototype representations of each class.
+Few-shot learning aims to enable models to generalize to new classes with only a few labeled examples. Prototypical Networks achieve this by computing a prototype (mean embedding) for each class and classifying query samples based on their distances to these prototypes in the embedding space.
 
 * **Task**: classifying image with few dataset.
 * **Dataset**: downloaded from `torch` dataset library.
 
-Few-shot learning aims to enable models to generalize to new classes with only a few labeled examples. Prototypical Networks achieve this by computing a prototype (mean embedding) for each class and classifying query samples based on their distances to these prototypes in the embedding space.
+### Requirements
+To run the code on your own machine, `run pip install -r requirements.txt`.
+```text
+tqdm>=4.67.1
+```
 
 ### Configuration
 `confing.py` contains the configuration settings for the model, including the framework, dimensions, learning rate, and other hyperparameters
@@ -71,78 +65,4 @@ if __name__ == "__main__":
   evisoder = FewShotEpisoder(imageset, unseen_classes, protonet_config.k_shot, protonet_config.n_query,
                              protonet_config.transform)
   evaluate(my_model, my_data, device)
-```
-
-## Technical Highlights
-
-### Prototyping 
-It optimizes the embedding space to create distinct class prototypes. These prototypes are calculated using mean of the sample value and processed during each epochs.
-
-```python
-def get_prototypes(support_set):
-  prototypes = list()
-  embedded_features_list = [[] for _ in range(len(support_set.classes))]
-  for embedded_feature, label in support_set:
-    idx = support_set.classes.index(label)
-    embedded_features_list[idx].append(embedded_feature)
-  for embedded_features in embedded_features_list:
-    class_prototype = torch.stack(embedded_features).mean(dim=0)
-    prototypes.append(class_prototype.flatten())
-  prototypes = torch.stack(prototypes)
-  return prototypes
-```
-
-### Euclidean Distance and Forward
-The model outputs a hot vector having euclidean distances through each prototypes. they are represented as negative softmax ratio (following the original paper). It is worthy mentioned that it employees simple skip connection (residual connection).
-
-```python
-class ProtoNet(nn.Module):
-  def forward(self, x, prototypes):
-    x = self.convs[0](x)
-    x = self.act(x)
-    for conv in self.convs[1:-1]:
-      res = x
-      x = conv(x)
-      x = self.act(x)
-      x += res
-    x = self.convs[-1](x)
-    x = self.flat(x)
-    return -1 * torch.cdist(x, prototypes, p=2)
-```
-
-### Training
-After sampling its optimization object, the model gets updated by them (For a epoch, it resamples the prototypes from new support set.). 
-
-```python
-def train(model, path, config:Config, episoder:FewShotEpisoder, device, init=True):
-  model.to(device)
-  if init: model.apply(init_weights)
-  optim = torch.optim.SGD(model.parameters(), lr=config.alpha)
-  criterion = nn.CrossEntropyLoss()
-
-  progression = tqdm(range(config.epochs))
-  for _ in progression:
-    support_set, query_set = episoder.get_episode()
-    prototypes = get_prototypes(support_set)
-    for _ in range(config.iterations):
-      iter_loss = float(0)
-      for feature, label in DataLoader(query_set, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=4):
-        feature, label = feature.to(device, non_blocking=True), label.to(device, non_blocking=True)
-        pred = model.forward(feature, prototypes)
-        loss = criterion(pred, label)
-        optim.zero_grad()
-        loss.backward()
-        if config.clip_grad: nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-        optim.step()
-        iter_loss += loss.item()
-      iter_loss /= len(query_set)
-      progression.set_postfix(iter_loss=iter_loss)
-    del prototypes, feature, label, pred, loss
-    torch.cuda.empty_cache()
-
-  features = {
-    "state": model.state_dict(),
-    "config": config,
-  } # features
-  torch.save(features, f'{path}.bin')
 ```
