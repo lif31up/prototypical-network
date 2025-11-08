@@ -4,8 +4,8 @@ This implementation is inspired by:
 
 Few-shot learning aims to enable models to generalize to new classes with only a few labeled examples. Prototypical Networks achieve this by computing a prototype (mean embedding) for each class and classifying query samples based on their distances to these prototypes in the embedding space.
 
-* **Task**: classifying image with few dataset.
-* **Dataset**: downloaded from `torch` dataset library.
+* **Task**: Image Recognition
+* **Dataset**: Omniglot Futurama Alien Alphabet
 
 ### Requirements
 To run the code on your own machine, `run pip install -r requirements.txt`.
