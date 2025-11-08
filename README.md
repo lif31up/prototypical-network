@@ -1,5 +1,6 @@
 # Prototypical Network for Few-Shot Image Classification
-This implementation is inspired by [Prototypical Networks for Few-Shot Learning (2017)](https://arxiv.org/abs/1703.05175) by Jake Snell, Kevin Swersky, Richard S. Zemel.
+This implementation is inspired by:
+[Prototypical Networks for Few-Shot Learning (2017)](https://arxiv.org/abs/1703.05175) by Jake Snell, Kevin Swersky, Richard S. Zemel.
 
 Few-shot learning aims to enable models to generalize to new classes with only a few labeled examples. Prototypical Networks achieve this by computing a prototype (mean embedding) for each class and classifying query samples based on their distances to these prototypes in the embedding space.
 
