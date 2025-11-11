@@ -7,6 +7,11 @@ Few-shot learning aims to enable models to generalize to new classes with only a
 * **Task**: Image Recognition
 * **Dataset**: Omniglot Futurama Alien Alphabet
 
+### Experiment on CoLab
+<a href="https://colab.research.google.com/drive/1gsVtGvISCpXQZsKvFjLVocn89ovazusE?usp=sharing">
+  <img alt="colab" src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Google_Colaboratory_SVG_Logo.svg/2560px-Google_Colaboratory_SVG_Logo.svg.png" width="160"></img>
+</a>
+
 ### Requirements
 To run the code on your own machine, `run pip install -r requirements.txt`.
 ```text
